@@ -13,6 +13,7 @@ export default function AdminPage() {
   const [creating, setCreating] = useState(false)
   const [created, setCreated] = useState<NewUser | null>(null)
   const [resetResult, setResetResult] = useState<{ id: number; password: string } | null>(null)
+  const [wiping, setWiping] = useState(false)
   const [error, setError] = useState('')
 
   async function load() {
@@ -41,6 +42,13 @@ export default function AdminPage() {
     if (!confirm(`Supprimer le compte de ${username} ?`)) return
     await fetch(`/api/admin/users/${id}`, { method: 'DELETE' })
     load()
+  }
+
+  async function handleWipe() {
+    if (!confirm('Supprimer TOUS les ninjas, dons, taxes et logs ?\n\nLes comptes et paramètres sont conservés.\nCette action est irréversible.')) return
+    setWiping(true)
+    await fetch('/api/admin/reset', { method: 'POST' })
+    setWiping(false)
   }
 
   async function handleReset(id: number) {
@@ -98,6 +106,24 @@ export default function AdminPage() {
             <button onClick={() => setResetResult(null)} className="text-xs text-ink-faint mt-2 hover:text-ink">Fermer</button>
           </div>
         )}
+
+        {/* Danger zone */}
+        <div className="card p-6 border-red-900/50">
+          <h2 className="text-base font-semibold text-red-400 mb-1">Zone dangereuse</h2>
+          <p className="text-ink-muted text-sm mb-4">
+            Supprime tous les ninjas, leurs dons, taxes et logs. Les comptes utilisateurs et les paramètres sont conservés.
+          </p>
+          <button
+            onClick={handleWipe}
+            disabled={wiping}
+            className="flex items-center gap-2 px-4 py-2 rounded-lg bg-red-950 border border-red-900 text-red-400 hover:bg-red-900 hover:text-red-300 transition-colors duration-200 text-sm font-medium cursor-pointer disabled:opacity-50"
+          >
+            <svg viewBox="0 0 24 24" className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth="1.5">
+              <path strokeLinecap="round" strokeLinejoin="round" d="M14.74 9l-.346 9m-4.788 0L9.26 9m9.968-3.21c.342.052.682.107 1.022.166m-1.022-.165L18.16 19.673a2.25 2.25 0 01-2.244 2.077H8.084a2.25 2.25 0 01-2.244-2.077L4.772 5.79m14.456 0a48.108 48.108 0 00-3.478-.397m-12 .562c.34-.059.68-.114 1.022-.165m0 0a48.11 48.11 0 013.478-.397m7.5 0v-.916c0-1.18-.91-2.164-2.09-2.201a51.964 51.964 0 00-3.32 0c-1.18.037-2.09 1.022-2.09 2.201v.916m7.5 0a48.667 48.667 0 00-7.5 0" />
+            </svg>
+            {wiping ? 'Suppression...' : 'Supprimer tous les ninjas et données'}
+          </button>
+        </div>
 
         {/* Users list */}
         <div className="card overflow-hidden">
