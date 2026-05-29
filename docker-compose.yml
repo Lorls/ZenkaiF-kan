@@ -1,0 +1,15 @@
+services:
+  app:
+    build: .
+    ports:
+      - "3000:3000"
+    environment:
+      DATABASE_URL: "file:/data/koeki.db"
+      SITE_PASSWORD: "${SITE_PASSWORD:-changeme}"
+      SESSION_SECRET: "${SESSION_SECRET:-changez-cette-cle-secrete-en-production-32chars}"
+    volumes:
+      - koeki-data:/data
+    restart: unless-stopped
+
+volumes:
+  koeki-data:

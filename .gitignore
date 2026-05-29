@@ -1,0 +1,47 @@
+# Dependencies
+node_modules/
+.pnp
+.pnp.js
+
+# Next.js
+.next/
+out/
+
+# Env files (ne jamais commit les secrets)
+.env
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+
+# Database
+*.db
+*.db-journal
+*.db-shm
+*.db-wal
+/prisma/dev.db
+
+# Build
+dist/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Editor
+.vscode/
+.idea/
+*.swp
+
+# Test screenshots
+screenshots/
+
+# Claude skill test files
+test-*.mjs
+
+# Claude Code internals
+.claude/
+
+# Python cache
+__pycache__/
+*.pyc
