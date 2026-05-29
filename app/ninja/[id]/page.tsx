@@ -246,6 +246,10 @@ export default function NinjaPage() {
           {/* Taxes */}
           <div className="card p-5">
             <h2 className="text-base font-semibold text-ink mb-3">Taxes hebdomadaires</h2>
+            <div className="flex items-center gap-3 mb-2.5">
+              <span className="flex items-center gap-1.5 text-xs text-gold"><span className="w-2 h-2 rounded-full bg-gold/60 inline-block" />Semaine courante</span>
+              <span className="flex items-center gap-1.5 text-xs text-blue-400"><span className="w-2 h-2 rounded-full bg-blue-500/60 inline-block" />Semaine suivante</span>
+            </div>
             <div className="grid grid-cols-2 gap-1.5">
               {taxWeeks.map((weekStart) => {
                 const tax = getTaxForWeek(weekStart)
