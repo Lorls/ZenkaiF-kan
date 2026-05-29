@@ -241,7 +241,7 @@ export default function NinjaPage() {
         </div>
 
         {/* Taxes + Resources side by side */}
-        <div className="grid lg:grid-cols-[320px_1fr] gap-6 items-start">
+        <div className="grid lg:grid-cols-[40%_1fr] gap-6 items-start">
 
           {/* Taxes */}
           <div className="card p-5">
