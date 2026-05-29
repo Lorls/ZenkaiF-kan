@@ -18,13 +18,15 @@ FROM base AS runner
 ENV NODE_ENV=production
 ENV NEXT_TELEMETRY_DISABLED=1
 
+# Prisma schema engine needs libssl.so.1.1 on Alpine
+RUN apk add --no-cache openssl1.1-compat
+
 # Copy standalone output
 COPY --from=builder /app/.next/standalone ./
 COPY --from=builder /app/.next/static ./.next/static
 COPY --from=builder /app/public ./public
 
-# Copy prisma — on appelle directement node_modules/prisma/build/index.js
-# au lieu de .bin/prisma (symlink absent dans standalone)
+# Copy prisma CLI + engines
 COPY --from=builder /app/prisma ./prisma
 COPY --from=builder /app/node_modules/.prisma ./node_modules/.prisma
 COPY --from=builder /app/node_modules/@prisma ./node_modules/@prisma
