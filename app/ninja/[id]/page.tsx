@@ -142,7 +142,7 @@ export default function NinjaPage() {
   // Past 8 weeks
   const taxWeeks = Array.from({ length: 10 }, (_, i) => {
     const d = new Date(currentWeekStart)
-    d.setDate(d.getDate() - i * 7)
+    d.setUTCDate(d.getUTCDate() - i * 7)
     return d
   }).reverse()
   taxWeeks.push(nextWeekStart)
