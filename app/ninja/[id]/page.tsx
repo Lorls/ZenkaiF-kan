@@ -254,34 +254,36 @@ export default function NinjaPage() {
                 const isCurrent = weekStart.getTime() === currentWeekStart.getTime()
 
                 return (
-                  <button
+                  <div
                     key={weekStart.toISOString()}
-                    onClick={() => toggleTax(weekStart, paid)}
-                    className={`flex items-center justify-between py-2 px-2.5 rounded-lg border transition-all duration-200 cursor-pointer text-left ${
-                      paid
-                        ? 'border-emerald-900/60 bg-emerald-950/30 hover:bg-emerald-950/50'
-                        : isCurrent
-                        ? 'border-gold/30 bg-gold/5 hover:bg-gold/10'
-                        : isNext
-                        ? 'border-blue-900/50 bg-blue-950/20 hover:bg-blue-950/30'
-                        : 'border-border-subtle bg-bg-elevated/30 hover:bg-bg-elevated/60'
+                    className={`flex items-center justify-between py-2 px-2.5 rounded-lg border ${
+                      isCurrent ? 'border-gold/30 bg-gold/5' : isNext ? 'border-blue-900/50 bg-blue-950/20' : 'border-border-subtle bg-bg-elevated/30'
                     }`}
                   >
                     <span className={`text-xs font-medium truncate mr-1.5 ${
-                      paid ? 'text-emerald-400' : isCurrent ? 'text-gold' : isNext ? 'text-blue-400' : 'text-ink-muted'
+                      isCurrent ? 'text-gold' : isNext ? 'text-blue-400' : 'text-ink-muted'
                     }`}>
                       {formatWeekRange(weekStart)}
                     </span>
-                    {paid ? (
-                      <svg viewBox="0 0 24 24" className="w-3.5 h-3.5 shrink-0 text-emerald-400" fill="none" stroke="currentColor" strokeWidth="2.5">
-                        <path strokeLinecap="round" strokeLinejoin="round" d="M4.5 12.75l6 6 9-13.5" />
-                      </svg>
-                    ) : (
-                      <svg viewBox="0 0 24 24" className="w-3.5 h-3.5 shrink-0 text-red-500" fill="none" stroke="currentColor" strokeWidth="2.5">
-                        <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
-                      </svg>
-                    )}
-                  </button>
+                    <button
+                      onClick={() => toggleTax(weekStart, paid)}
+                      className={`flex items-center gap-1 text-xs font-medium px-2 py-1 rounded-full border transition-all duration-200 cursor-pointer shrink-0 ${
+                        paid
+                          ? 'badge-paid hover:bg-emerald-900'
+                          : 'badge-unpaid hover:bg-red-900'
+                      }`}
+                    >
+                      {paid ? (
+                        <svg viewBox="0 0 24 24" className="w-3 h-3" fill="none" stroke="currentColor" strokeWidth="2.5">
+                          <path strokeLinecap="round" strokeLinejoin="round" d="M4.5 12.75l6 6 9-13.5" />
+                        </svg>
+                      ) : (
+                        <svg viewBox="0 0 24 24" className="w-3 h-3" fill="none" stroke="currentColor" strokeWidth="2.5">
+                          <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+                        </svg>
+                      )}
+                    </button>
+                  </div>
                 )
               })}
             </div>
