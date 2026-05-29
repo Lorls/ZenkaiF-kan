@@ -164,7 +164,7 @@ export default function NinjaPage() {
   return (
     <>
       <Navbar />
-      <main className="max-w-4xl mx-auto px-4 sm:px-6 py-8 space-y-6">
+      <main className="max-w-7xl mx-auto px-4 sm:px-6 py-8 space-y-6">
         {/* Back */}
         <button
           onClick={() => router.push('/dashboard')}
@@ -240,132 +240,119 @@ export default function NinjaPage() {
           </div>
         </div>
 
-        {/* Taxes */}
-        <div className="card p-6">
-          <h2 className="text-base font-semibold text-ink mb-4">Taxes hebdomadaires</h2>
-          <div className="space-y-2">
-            {taxWeeks.map((weekStart) => {
-              const tax = getTaxForWeek(weekStart)
-              const paid = tax?.paid === true
-              const label = weekLabel(weekStart)
-              const isNext = weekStart.getTime() === nextWeekStart.getTime()
-              const isCurrent = weekStart.getTime() === currentWeekStart.getTime()
+        {/* Taxes + Resources side by side */}
+        <div className="grid lg:grid-cols-[320px_1fr] gap-6 items-start">
 
-              return (
-                <div
-                  key={weekStart.toISOString()}
-                  className={`flex items-center justify-between py-2.5 px-3 rounded-lg border transition-colors duration-200 ${
-                    isCurrent ? 'border-gold/30 bg-gold/5' : isNext ? 'border-blue-900/50 bg-blue-950/20' : 'border-border-subtle bg-bg-elevated/30'
-                  }`}
-                >
-                  <div>
-                    <span className={`text-sm font-medium ${isCurrent ? 'text-gold' : isNext ? 'text-blue-400' : 'text-ink-muted'}`}>
-                      {label}
-                    </span>
-                    {(isCurrent || isNext) && (
-                      <span className="ml-2 text-xs text-ink-faint">{formatWeekRange(weekStart)}</span>
-                    )}
-                  </div>
+          {/* Taxes */}
+          <div className="card p-5">
+            <h2 className="text-base font-semibold text-ink mb-3">Taxes hebdomadaires</h2>
+            <div className="grid grid-cols-2 gap-1.5">
+              {taxWeeks.map((weekStart) => {
+                const tax = getTaxForWeek(weekStart)
+                const paid = tax?.paid === true
+                const isNext = weekStart.getTime() === nextWeekStart.getTime()
+                const isCurrent = weekStart.getTime() === currentWeekStart.getTime()
 
+                return (
                   <button
+                    key={weekStart.toISOString()}
                     onClick={() => toggleTax(weekStart, paid)}
-                    className={`flex items-center gap-1.5 text-xs font-medium px-3 py-1.5 rounded-full border transition-all duration-200 cursor-pointer ${
+                    className={`flex items-center justify-between py-2 px-2.5 rounded-lg border transition-all duration-200 cursor-pointer text-left ${
                       paid
-                        ? 'badge-paid hover:bg-emerald-900'
-                        : 'badge-unpaid hover:bg-red-900'
+                        ? 'border-emerald-900/60 bg-emerald-950/30 hover:bg-emerald-950/50'
+                        : isCurrent
+                        ? 'border-gold/30 bg-gold/5 hover:bg-gold/10'
+                        : isNext
+                        ? 'border-blue-900/50 bg-blue-950/20 hover:bg-blue-950/30'
+                        : 'border-border-subtle bg-bg-elevated/30 hover:bg-bg-elevated/60'
                     }`}
                   >
+                    <span className={`text-xs font-medium truncate mr-1.5 ${
+                      paid ? 'text-emerald-400' : isCurrent ? 'text-gold' : isNext ? 'text-blue-400' : 'text-ink-muted'
+                    }`}>
+                      {formatWeekRange(weekStart)}
+                    </span>
                     {paid ? (
-                      <>
-                        <svg viewBox="0 0 24 24" className="w-3 h-3" fill="none" stroke="currentColor" strokeWidth="2.5">
-                          <path strokeLinecap="round" strokeLinejoin="round" d="M4.5 12.75l6 6 9-13.5" />
-                        </svg>
-                        Payée
-                      </>
+                      <svg viewBox="0 0 24 24" className="w-3.5 h-3.5 shrink-0 text-emerald-400" fill="none" stroke="currentColor" strokeWidth="2.5">
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M4.5 12.75l6 6 9-13.5" />
+                      </svg>
                     ) : (
-                      <>
-                        <svg viewBox="0 0 24 24" className="w-3 h-3" fill="none" stroke="currentColor" strokeWidth="2.5">
-                          <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
-                        </svg>
-                        Impayée
-                      </>
+                      <svg viewBox="0 0 24 24" className="w-3.5 h-3.5 shrink-0 text-red-500" fill="none" stroke="currentColor" strokeWidth="2.5">
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+                      </svg>
                     )}
                   </button>
-                </div>
-              )
-            })}
-          </div>
-        </div>
-
-        {/* Resources */}
-        <div className="card p-6">
-          <h2 className="text-base font-semibold text-ink mb-4">Ressources données</h2>
-
-          {/* Summary grid */}
-          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-2 mb-6">
-            {RESOURCES.map((resource) => {
-              const { amount, points } = resourceTotals[resource]
-              return (
-                <div
-                  key={resource}
-                  className={`rounded-lg border p-3 transition-colors ${
-                    amount > 0 ? 'border-gold/20 bg-gold/5' : 'border-border-subtle bg-bg-elevated/20'
-                  }`}
-                >
-                  <p className="text-xs text-ink-muted mb-1">{resource}</p>
-                  <p className={`font-mono text-lg font-semibold ${amount > 0 ? 'text-ink' : 'text-ink-faint'}`}>
-                    {amount > 0 ? amount.toLocaleString('fr-FR') : '—'}
-                  </p>
-                  {amount > 0 && (
-                    <p className="text-xs text-gold mt-0.5">+{Math.round(points)} pts</p>
-                  )}
-                  {amount > 0 && (
-                    <p className="text-xs text-ink-faint">{resourceValues[resource] ?? 1} pts/u</p>
-                  )}
-                </div>
-              )
-            })}
+                )
+              })}
+            </div>
           </div>
 
-          {/* Add donation form */}
-          <div className="border-t border-border pt-4">
-            <h3 className="text-sm font-medium text-ink-muted mb-3">Ajouter un don</h3>
-            <form onSubmit={addDonation} className="flex flex-wrap gap-2 items-end">
-              <div className="flex-1 min-w-32">
-                <label className="block text-xs text-ink-muted mb-1">Ressource</label>
-                <select
-                  value={donationResource}
-                  onChange={(e) => setDonationResource(e.target.value)}
-                  className="input"
+          {/* Resources + Add donation */}
+          <div className="card p-5">
+            <h2 className="text-base font-semibold text-ink mb-3">Ressources données</h2>
+
+            <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 xl:grid-cols-6 gap-2 mb-5">
+              {RESOURCES.map((resource) => {
+                const { amount, points } = resourceTotals[resource]
+                return (
+                  <div
+                    key={resource}
+                    className={`rounded-lg border p-2.5 transition-colors ${
+                      amount > 0 ? 'border-gold/20 bg-gold/5' : 'border-border-subtle bg-bg-elevated/20'
+                    }`}
+                  >
+                    <p className="text-xs text-ink-muted mb-1 truncate">{resource}</p>
+                    <p className={`font-mono text-base font-semibold ${amount > 0 ? 'text-ink' : 'text-ink-faint'}`}>
+                      {amount > 0 ? amount.toLocaleString('fr-FR') : '—'}
+                    </p>
+                    {amount > 0 && (
+                      <p className="text-xs text-gold mt-0.5">+{Math.round(points)} pts</p>
+                    )}
+                  </div>
+                )
+              })}
+            </div>
+
+            {/* Add donation form */}
+            <div className="border-t border-border pt-4">
+              <h3 className="text-sm font-medium text-ink-muted mb-3">Ajouter un don</h3>
+              <form onSubmit={addDonation} className="flex flex-wrap gap-2 items-end">
+                <div className="flex-1 min-w-32">
+                  <label className="block text-xs text-ink-muted mb-1">Ressource</label>
+                  <select
+                    value={donationResource}
+                    onChange={(e) => setDonationResource(e.target.value)}
+                    className="input"
+                  >
+                    {RESOURCES.map((r) => (
+                      <option key={r} value={r}>{r}</option>
+                    ))}
+                  </select>
+                </div>
+                <div className="flex-1 min-w-24">
+                  <label className="block text-xs text-ink-muted mb-1">
+                    Quantité · {resourceValues[donationResource] ?? 1} pts/u
+                  </label>
+                  <input
+                    type="number"
+                    value={donationAmount}
+                    onChange={(e) => setDonationAmount(e.target.value)}
+                    className="input"
+                    placeholder="0"
+                    min="0"
+                    step="any"
+                    required
+                  />
+                </div>
+                <button
+                  type="submit"
+                  disabled={donationLoading || !donationAmount}
+                  className="btn-primary whitespace-nowrap"
                 >
-                  {RESOURCES.map((r) => (
-                    <option key={r} value={r}>{r}</option>
-                  ))}
-                </select>
-              </div>
-              <div className="flex-1 min-w-24">
-                <label className="block text-xs text-ink-muted mb-1">
-                  Quantité · {resourceValues[donationResource] ?? 1} pts/u
-                </label>
-                <input
-                  type="number"
-                  value={donationAmount}
-                  onChange={(e) => setDonationAmount(e.target.value)}
-                  className="input"
-                  placeholder="0"
-                  min="0"
-                  step="any"
-                  required
-                />
-              </div>
-              <button
-                type="submit"
-                disabled={donationLoading || !donationAmount}
-                className="btn-primary whitespace-nowrap"
-              >
-                {donationLoading ? 'Ajout...' : `+${donationAmount ? Math.round(parseFloat(donationAmount) * (resourceValues[donationResource] ?? 1)) : 0} pts`}
-              </button>
-            </form>
+                  {donationLoading ? 'Ajout...' : `+${donationAmount ? Math.round(parseFloat(donationAmount) * (resourceValues[donationResource] ?? 1)) : 0} pts`}
+                </button>
+              </form>
+            </div>
           </div>
         </div>
 
