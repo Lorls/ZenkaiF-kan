@@ -13,10 +13,11 @@ COPY . .
 RUN npx prisma generate
 RUN npm run build
 
-# Runner — Debian slim a OpenSSL 3 natif, Prisma fonctionne sans config extra
 FROM base AS runner
 ENV NODE_ENV=production
 ENV NEXT_TELEMETRY_DISABLED=1
+
+RUN apt-get update -y && apt-get install -y openssl && rm -rf /var/lib/apt/lists/*
 
 COPY --from=builder /app/.next/standalone ./
 COPY --from=builder /app/.next/static ./.next/static
