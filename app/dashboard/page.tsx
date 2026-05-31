@@ -67,9 +67,13 @@ export default function DashboardPage() {
     )
   }
 
-  const filtered = ninjas.filter((n) =>
-    n.name.toLowerCase().includes(search.toLowerCase())
-  )
+  const normalize = (s: string) =>
+    s.normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase()
+
+  const filtered = ninjas.filter((n) => {
+    const name = normalize(n.name)
+    return normalize(search).split(/\s+/).filter(Boolean).every((token) => name.includes(token))
+  })
 
   const currentWeekStart = getWeekStart().getTime()
   const paidCount = ninjas.filter((n) =>
