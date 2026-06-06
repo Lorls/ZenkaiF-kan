@@ -12,6 +12,7 @@ export const RESOURCES = [
   'T3',
   'T4',
   'Ryo',
+  'Jade',
 ] as const
 
 export type Resource = (typeof RESOURCES)[number]
@@ -30,4 +31,5 @@ export const DEFAULT_VALUES: Record<Resource, number> = {
   T3: 30,
   T4: 50,
   Ryo: 0.01,
+  Jade: 1000,
 }

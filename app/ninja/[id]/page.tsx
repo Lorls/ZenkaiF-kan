@@ -46,10 +46,11 @@ export default function NinjaPage() {
   const [editPoints, setEditPoints] = useState(false)
   const [pointsInput, setPointsInput] = useState('')
 
-  // Donation form
-  const [donationResource, setDonationResource] = useState<string>(RESOURCES[0])
-  const [donationAmount, setDonationAmount] = useState('')
-  const [donationLoading, setDonationLoading] = useState(false)
+  // Inline donation state
+  const [pendingAmounts, setPendingAmounts] = useState<Record<string, number>>({})
+  const [editingResource, setEditingResource] = useState<string | null>(null)
+  const [editingValue, setEditingValue] = useState('')
+  const [submittingResource, setSubmittingResource] = useState<string | null>(null)
 
   const currentWeekStart = getWeekStart()
   const nextWeekStart = getNextWeekStart()
@@ -92,22 +93,36 @@ export default function NinjaPage() {
     if (res.ok) { setNinja((n) => n ? { ...n, points: pts } : n); setEditPoints(false) }
   }
 
-  async function addDonation(e: React.FormEvent) {
-    e.preventDefault()
-    if (!donationAmount || !donationResource) return
-    setDonationLoading(true)
+  function setPending(resource: string, value: number) {
+    setPendingAmounts((prev) => ({ ...prev, [resource]: Math.max(0, value) }))
+  }
 
+  function startEditing(resource: string) {
+    setEditingResource(resource)
+    setEditingValue(String(pendingAmounts[resource] ?? 0))
+  }
+
+  function commitEditing() {
+    if (!editingResource) return
+    const v = parseFloat(editingValue)
+    setPending(editingResource, isNaN(v) ? 0 : v)
+    setEditingResource(null)
+  }
+
+  async function submitDonation(resource: string) {
+    const amount = pendingAmounts[resource] ?? 0
+    if (amount <= 0) return
+    setSubmittingResource(resource)
     const res = await fetch('/api/donations', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ ninjaId: id, resource: donationResource, amount: parseFloat(donationAmount) }),
+      body: JSON.stringify({ ninjaId: id, resource, amount }),
     })
-
     if (res.ok) {
+      setPending(resource, 0)
       await load()
-      setDonationAmount('')
     }
-    setDonationLoading(false)
+    setSubmittingResource(null)
   }
 
   async function deleteDonation(donationId: number) {
@@ -293,71 +308,89 @@ export default function NinjaPage() {
             </div>
           </div>
 
-          {/* Resources + Add donation */}
+          {/* Resources — inline donation */}
           <div className="card p-5">
             <h2 className="text-base font-semibold text-ink mb-3">Ressources données</h2>
 
-            <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 xl:grid-cols-6 gap-2 mb-5">
+            <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 xl:grid-cols-6 gap-2">
               {RESOURCES.map((resource) => {
                 const { amount, points } = resourceTotals[resource]
+                const pending = pendingAmounts[resource] ?? 0
+                const ptsPerUnit = resourceValues[resource] ?? 1
+                const pendingPts = Math.round(pending * ptsPerUnit)
+                const isEditing = editingResource === resource
+                const isSubmitting = submittingResource === resource
+
                 return (
                   <div
                     key={resource}
-                    className={`rounded-lg border p-2.5 transition-colors ${
+                    className={`rounded-lg border p-2.5 flex flex-col gap-1.5 transition-colors ${
                       amount > 0 ? 'border-gold/20 bg-gold/5' : 'border-border-subtle bg-bg-elevated/20'
                     }`}
                   >
-                    <p className="text-xs text-ink-muted mb-1 truncate">{resource}</p>
-                    <p className={`font-mono text-base font-semibold ${amount > 0 ? 'text-ink' : 'text-ink-faint'}`}>
+                    {/* Label + total */}
+                    <p className="text-xs text-ink-muted truncate leading-tight">{resource}</p>
+                    <p className={`font-mono text-base font-semibold leading-none ${amount > 0 ? 'text-ink' : 'text-ink-faint'}`}>
                       {amount > 0 ? amount.toLocaleString('fr-FR') : '—'}
                     </p>
                     {amount > 0 && (
-                      <p className="text-xs text-gold mt-0.5">+{Math.round(points)} pts</p>
+                      <p className="text-xs text-gold leading-none">+{Math.round(points)} pts</p>
+                    )}
+
+                    {/* Pending controls */}
+                    <div className="mt-auto pt-1.5 border-t border-border-subtle/50 flex items-center gap-1">
+                      {/* − */}
+                      <button
+                        onClick={() => setPending(resource, pending - 1)}
+                        disabled={pending <= 0}
+                        className="w-5 h-5 rounded flex items-center justify-center border border-border-subtle text-ink-muted hover:border-gold/50 hover:text-gold disabled:opacity-20 disabled:cursor-not-allowed transition-all duration-150 cursor-pointer text-xs font-bold leading-none select-none"
+                      >−</button>
+
+                      {/* Editable amount */}
+                      {isEditing ? (
+                        <input
+                          type="number"
+                          value={editingValue}
+                          onChange={(e) => setEditingValue(e.target.value)}
+                          onBlur={commitEditing}
+                          onKeyDown={(e) => { if (e.key === 'Enter' || e.key === 'Escape') commitEditing() }}
+                          className="flex-1 min-w-0 font-mono text-xs text-center bg-bg-elevated border border-gold/40 rounded px-1 py-0.5 outline-none text-ink"
+                          style={{ MozAppearance: 'textfield' }}
+                          autoFocus
+                        />
+                      ) : (
+                        <button
+                          onClick={() => startEditing(resource)}
+                          className={`flex-1 font-mono text-xs text-center rounded px-1 py-0.5 transition-colors duration-150 cursor-pointer border ${
+                            pending > 0
+                              ? 'text-gold border-gold/30 bg-gold/10 hover:bg-gold/15'
+                              : 'text-ink-faint border-transparent hover:border-border-subtle hover:text-ink-muted'
+                          }`}
+                        >
+                          {pending > 0 ? pending.toLocaleString('fr-FR') : '0'}
+                        </button>
+                      )}
+
+                      {/* + */}
+                      <button
+                        onClick={() => setPending(resource, pending + 1)}
+                        className="w-5 h-5 rounded flex items-center justify-center border border-border-subtle text-ink-muted hover:border-gold/50 hover:text-gold transition-all duration-150 cursor-pointer text-xs font-bold leading-none select-none"
+                      >+</button>
+                    </div>
+
+                    {/* Confirm button */}
+                    {pending > 0 && (
+                      <button
+                        onClick={() => submitDonation(resource)}
+                        disabled={isSubmitting}
+                        className="w-full text-xs font-medium py-1 px-2 rounded border border-gold/40 bg-gold/10 text-gold hover:bg-gold/20 hover:border-gold/60 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-150 cursor-pointer"
+                      >
+                        {isSubmitting ? '…' : `+${pendingPts} pts`}
+                      </button>
                     )}
                   </div>
                 )
               })}
-            </div>
-
-            {/* Add donation form */}
-            <div className="border-t border-border pt-4">
-              <h3 className="text-sm font-medium text-ink-muted mb-3">Ajouter un don</h3>
-              <form onSubmit={addDonation} className="flex flex-wrap gap-2 items-end">
-                <div className="flex-1 min-w-32">
-                  <label className="block text-xs text-ink-muted mb-1">Ressource</label>
-                  <select
-                    value={donationResource}
-                    onChange={(e) => setDonationResource(e.target.value)}
-                    className="input"
-                  >
-                    {RESOURCES.map((r) => (
-                      <option key={r} value={r}>{r}</option>
-                    ))}
-                  </select>
-                </div>
-                <div className="flex-1 min-w-24">
-                  <label className="block text-xs text-ink-muted mb-1">
-                    Quantité · {resourceValues[donationResource] ?? 1} pts/u
-                  </label>
-                  <input
-                    type="number"
-                    value={donationAmount}
-                    onChange={(e) => setDonationAmount(e.target.value)}
-                    className="input"
-                    placeholder="0"
-                    min="0"
-                    step="any"
-                    required
-                  />
-                </div>
-                <button
-                  type="submit"
-                  disabled={donationLoading || !donationAmount}
-                  className="btn-primary whitespace-nowrap"
-                >
-                  {donationLoading ? 'Ajout...' : `+${donationAmount ? Math.round(parseFloat(donationAmount) * (resourceValues[donationResource] ?? 1)) : 0} pts`}
-                </button>
-              </form>
             </div>
           </div>
         </div>
