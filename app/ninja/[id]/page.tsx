@@ -343,7 +343,7 @@ export default function NinjaPage() {
                       <button
                         onClick={() => setPending(resource, pending - 1)}
                         disabled={pending <= 0}
-                        className="w-5 h-5 rounded flex items-center justify-center border border-border-subtle text-ink-muted hover:border-gold/50 hover:text-gold disabled:opacity-20 disabled:cursor-not-allowed transition-all duration-150 cursor-pointer text-xs font-bold leading-none select-none"
+                        className="w-6 h-6 rounded flex items-center justify-center border border-gold/30 bg-gold/5 text-gold/70 hover:border-gold/70 hover:bg-gold/15 hover:text-gold disabled:opacity-25 disabled:cursor-not-allowed transition-all duration-150 cursor-pointer text-sm font-bold leading-none select-none"
                       >−</button>
 
                       {/* Editable amount */}
@@ -374,7 +374,7 @@ export default function NinjaPage() {
                       {/* + */}
                       <button
                         onClick={() => setPending(resource, pending + 1)}
-                        className="w-5 h-5 rounded flex items-center justify-center border border-border-subtle text-ink-muted hover:border-gold/50 hover:text-gold transition-all duration-150 cursor-pointer text-xs font-bold leading-none select-none"
+                        className="w-6 h-6 rounded flex items-center justify-center border border-gold/30 bg-gold/5 text-gold/70 hover:border-gold/70 hover:bg-gold/15 hover:text-gold transition-all duration-150 cursor-pointer text-sm font-bold leading-none select-none"
                       >+</button>
                     </div>
 
