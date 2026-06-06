@@ -13,7 +13,6 @@ export const RESOURCES = [
   'T3',
   'T4',
   'Ryo',
-  'Jade',
 ] as const
 
 export type Resource = (typeof RESOURCES)[number]
