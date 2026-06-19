@@ -405,6 +405,7 @@ export default function NinjaPage() {
                         )}
                       </>
                     )}
+                  </div>
                 )
               })}
             </div>
