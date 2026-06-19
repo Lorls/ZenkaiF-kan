@@ -29,5 +29,5 @@ export async function isAuthenticated(): Promise<boolean> {
 
 export async function isAdmin(): Promise<boolean> {
   const s = await getSession()
-  return s.authenticated === true && s.role === 'ADMIN'
+  return s.authenticated === true && s.role === 'GERANT'
 }

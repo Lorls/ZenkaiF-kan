@@ -3,8 +3,6 @@ import { db } from '@/lib/db'
 import { guard, unauthorized } from '@/lib/guard'
 import { logAction } from '@/lib/log'
 
-export const dynamic = 'force-dynamic'
-
 export async function GET() {
   const user = await guard('ninjas:read')
   if (!user) return unauthorized()

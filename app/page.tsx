@@ -1,7 +1,10 @@
-import { redirect } from 'next/navigation'
-import { isAuthenticated } from '@/lib/auth'
+'use client'
 
-export default async function RootPage() {
-  if (await isAuthenticated()) redirect('/dashboard')
-  redirect('/login')
+import { useRouter } from 'next/navigation'
+import { useEffect } from 'react'
+
+export default function RootPage() {
+  const router = useRouter()
+  useEffect(() => { router.replace('/dashboard') }, [router])
+  return null
 }
