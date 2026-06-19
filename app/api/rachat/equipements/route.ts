@@ -6,15 +6,15 @@ const SITUATIONS = ['Non Besoin', 'Besoin', 'Besoin primaire'] as const
 const CATEGORIES = ['T1', 'T2', 'T3', 'T4'] as const
 
 export async function GET() {
-  const user = await guard('member')
+  const user = await guard('rachat:read')
   if (!user) return unauthorized()
   const items = await db.rachatEquipement.findMany({ orderBy: [{ categorie: 'asc' }, { nom: 'asc' }] })
   return NextResponse.json(items)
 }
 
 export async function POST(req: NextRequest) {
-  const user = await guard(true)
-  if (!user) return unauthorized(true)
+  const user = await guard('rachat:write')
+  if (!user) return unauthorized()
   const { nom, categorie, prixPlan, prixCraft, situation } = await req.json()
   if (!nom?.trim()) return NextResponse.json({ error: 'Nom requis' }, { status: 400 })
   if (!CATEGORIES.includes(categorie)) return NextResponse.json({ error: 'Catégorie invalide' }, { status: 400 })

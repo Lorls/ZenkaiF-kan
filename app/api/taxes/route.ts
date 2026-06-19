@@ -5,7 +5,7 @@ import { logAction } from '@/lib/log'
 import { getWeekStart, formatWeekRange } from '@/lib/week'
 
 export async function POST(req: NextRequest) {
-  const user = await guard('write')
+  const user = await guard('ninjas:write')
   if (!user) return unauthorized()
 
   const { ninjaId, weekStart, paid } = await req.json()

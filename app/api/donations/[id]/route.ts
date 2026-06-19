@@ -4,7 +4,7 @@ import { guard, unauthorized } from '@/lib/guard'
 import { logAction } from '@/lib/log'
 
 export async function DELETE(_: NextRequest, context: { params: Promise<{ id: string }> }) {
-  const user = await guard('write')
+  const user = await guard('ninjas:write')
   if (!user) return unauthorized()
   const { id: paramId } = await context.params
 

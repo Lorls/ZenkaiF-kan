@@ -5,7 +5,7 @@ import { logAction } from '@/lib/log'
 import { GRADES, DEFAULT_THRESHOLDS, GradeThresholds } from '@/lib/grades'
 
 export async function GET() {
-  const user = await guard()
+  const user = await guard('ninjas:read')
   if (!user) return unauthorized()
   const stored = await db.setting.findMany({ where: { key: { in: GRADES.map(g => `grade:${g.key}`) } } })
   const m = Object.fromEntries(stored.map(s => [s.key.replace('grade:', ''), parseFloat(s.value)]))
@@ -13,8 +13,8 @@ export async function GET() {
 }
 
 export async function POST(req: NextRequest) {
-  const user = await guard(true)
-  if (!user) return unauthorized(true)
+  const user = await guard('settings:write')
+  if (!user) return unauthorized()
 
   const body: Partial<GradeThresholds> = await req.json()
   const stored = await db.setting.findMany({ where: { key: { in: GRADES.map(g => `grade:${g.key}`) } } })

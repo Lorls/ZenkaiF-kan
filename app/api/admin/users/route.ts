@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { db } from '@/lib/db'
 import { guard, unauthorized } from '@/lib/guard'
+import { ROLES } from '@/lib/permissions'
 import bcrypt from 'bcryptjs'
 
 function generatePassword(len = 8): string {
@@ -9,8 +10,8 @@ function generatePassword(len = 8): string {
 }
 
 export async function GET() {
-  const user = await guard(true)
-  if (!user) return unauthorized(true)
+  const user = await guard('admin:manage')
+  if (!user) return unauthorized()
   const users = await db.user.findMany({ orderBy: { createdAt: 'asc' }, select: { id: true, username: true, role: true, createdAt: true } })
   const counts = await db.log.groupBy({ by: ['username'], _count: { id: true } })
   const countMap = Object.fromEntries(counts.map(c => [c.username, c._count.id]))
@@ -18,12 +19,12 @@ export async function GET() {
 }
 
 export async function POST(req: NextRequest) {
-  const user = await guard(true)
-  if (!user) return unauthorized(true)
+  const user = await guard('admin:manage')
+  if (!user) return unauthorized()
 
-  const { username, role = 'MEMBRE' } = await req.json()
+  const { username, role = 'MEMBRE_SHOMU' } = await req.json()
   if (!username?.trim()) return NextResponse.json({ error: 'Nom requis' }, { status: 400 })
-  if (!['ADMIN', 'MEMBRE', 'VISITEUR'].includes(role)) {
+  if (!(ROLES as readonly string[]).includes(role)) {
     return NextResponse.json({ error: 'Rôle invalide' }, { status: 400 })
   }
 

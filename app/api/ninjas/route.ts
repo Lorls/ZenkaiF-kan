@@ -4,14 +4,14 @@ import { guard, unauthorized } from '@/lib/guard'
 import { logAction } from '@/lib/log'
 
 export async function GET() {
-  const user = await guard()
+  const user = await guard('ninjas:read')
   if (!user) return unauthorized()
   const ninjas = await db.ninja.findMany({ orderBy: { name: 'asc' }, include: { taxes: true } })
   return NextResponse.json(ninjas)
 }
 
 export async function POST(req: NextRequest) {
-  const user = await guard('write')
+  const user = await guard('ninjas:write')
   if (!user) return unauthorized()
 
   const { name } = await req.json()

@@ -5,15 +5,15 @@ import { guard, unauthorized } from '@/lib/guard'
 const SITUATIONS = ['Non Besoin', 'Besoin', 'Besoin primaire'] as const
 
 export async function GET() {
-  const user = await guard('member')
+  const user = await guard('rachat:read')
   if (!user) return unauthorized()
   const items = await db.rachatRessource.findMany({ orderBy: { nom: 'asc' } })
   return NextResponse.json(items)
 }
 
 export async function POST(req: NextRequest) {
-  const user = await guard(true)
-  if (!user) return unauthorized(true)
+  const user = await guard('rachat:write')
+  if (!user) return unauthorized()
   const { nom, prixRachatMax, situation } = await req.json()
   if (!nom?.trim()) return NextResponse.json({ error: 'Nom requis' }, { status: 400 })
   if (!SITUATIONS.includes(situation)) return NextResponse.json({ error: 'Situation invalide' }, { status: 400 })

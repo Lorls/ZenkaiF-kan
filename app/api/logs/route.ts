@@ -3,8 +3,8 @@ import { db } from '@/lib/db'
 import { guard, unauthorized } from '@/lib/guard'
 
 export async function GET(req: NextRequest) {
-  const user = await guard(true)
-  if (!user) return unauthorized(true)
+  const user = await guard('logs:read')
+  if (!user) return unauthorized()
 
   const { searchParams: p } = req.nextUrl
   const search   = p.get('search')   || ''
@@ -42,7 +42,6 @@ export async function GET(req: NextRequest) {
     db.log.count({ where }),
   ])
 
-  // Stats (unfiltered)
   const [todayCount, totalCount, revertCount, users] = await db.$transaction([
     db.log.count({ where: { createdAt: { gte: new Date(new Date().setHours(0, 0, 0, 0)) } } }),
     db.log.count(),

@@ -5,7 +5,7 @@ import { logAction } from '@/lib/log'
 import { RESOURCES, DEFAULT_VALUES } from '@/lib/resources'
 
 export async function GET() {
-  const user = await guard()
+  const user = await guard('ninjas:read')
   if (!user) return unauthorized()
   const stored = await db.resourceValue.findMany()
   const storedMap = Object.fromEntries(stored.map(r => [r.resource, r.pointsPerUnit]))
@@ -13,8 +13,8 @@ export async function GET() {
 }
 
 export async function POST(req: NextRequest) {
-  const user = await guard(true)
-  if (!user) return unauthorized(true)
+  const user = await guard('settings:write')
+  if (!user) return unauthorized()
 
   const body: Record<string, number> = await req.json()
   const stored = await db.resourceValue.findMany()

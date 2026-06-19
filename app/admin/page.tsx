@@ -2,17 +2,18 @@
 
 import { useState, useEffect } from 'react'
 import Navbar from '@/components/Navbar'
-
-type Role = 'ADMIN' | 'MEMBRE' | 'VISITEUR'
+import { ROLES, ROLE_LABELS, Role } from '@/lib/permissions'
 
 interface User { id: number; username: string; role: Role; createdAt: string; actionCount: number }
 interface NewUser extends User { password: string }
 
-const ROLE_LABELS: Record<Role, string> = { ADMIN: 'Admin', MEMBRE: 'Membre', VISITEUR: 'Visiteur' }
 const ROLE_STYLES: Record<Role, string> = {
-  ADMIN: 'bg-gold/10 text-gold border-gold/20',
-  MEMBRE: 'bg-blue-950/40 text-blue-400 border-blue-900/40',
-  VISITEUR: 'bg-bg-elevated text-ink-muted border-border',
+  GERANT:            'bg-gold/10 text-gold border-gold/20',
+  RESPONSABLE_SHOMU: 'bg-purple-950/40 text-purple-400 border-purple-900/40',
+  RESPONSABLE_KOBO:  'bg-teal-950/40 text-teal-400 border-teal-900/40',
+  MEMBRE_SHOMU:      'bg-blue-950/40 text-blue-400 border-blue-900/40',
+  MEMBRE_KOBO:       'bg-emerald-950/40 text-emerald-400 border-emerald-900/40',
+  VISITEUR:          'bg-bg-elevated text-ink-muted border-border',
 }
 
 export default function AdminPage() {
@@ -20,7 +21,7 @@ export default function AdminPage() {
   const [me, setMe] = useState<{ userId: number } | null>(null)
   const [loading, setLoading] = useState(true)
   const [newUsername, setNewUsername] = useState('')
-  const [newRole, setNewRole] = useState<Role>('MEMBRE')
+  const [newRole, setNewRole] = useState<Role>('MEMBRE_SHOMU')
   const [creating, setCreating] = useState(false)
   const [created, setCreated] = useState<NewUser | null>(null)
   const [resetResult, setResetResult] = useState<{ id: number; password: string } | null>(null)
@@ -111,11 +112,11 @@ export default function AdminPage() {
             <select
               value={newRole}
               onChange={e => setNewRole(e.target.value as Role)}
-              className="input w-36"
+              className="input w-48"
             >
-              <option value="MEMBRE">Membre</option>
-              <option value="VISITEUR">Visiteur</option>
-              <option value="ADMIN">Admin</option>
+              {ROLES.map(r => (
+                <option key={r} value={r}>{ROLE_LABELS[r]}</option>
+              ))}
             </select>
             <button type="submit" disabled={creating || !newUsername.trim()} className="btn-primary whitespace-nowrap">
               {creating ? 'Création...' : 'Créer'}
@@ -183,7 +184,7 @@ export default function AdminPage() {
                   <tr key={u.id} className="border-b border-border-subtle last:border-0">
                     <td className="px-4 py-3">
                       <div className="flex items-center gap-2">
-                        <div className={`w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold ${u.role === 'ADMIN' ? 'bg-gold/20 text-gold' : 'bg-bg-elevated text-ink-muted'}`}>
+                        <div className={`w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold ${u.role === 'GERANT' ? 'bg-gold/20 text-gold' : 'bg-bg-elevated text-ink-muted'}`}>
                           {u.username[0].toUpperCase()}
                         </div>
                         <span className="font-medium text-ink">{u.username}</span>
@@ -194,11 +195,11 @@ export default function AdminPage() {
                       <select
                         value={u.role}
                         onChange={e => handleRoleChange(u.id, e.target.value as Role)}
-                        className={`text-xs font-mono px-2 py-1 rounded border bg-transparent cursor-pointer focus:outline-none focus:ring-1 focus:ring-gold/40 ${ROLE_STYLES[u.role]}`}
+                        className={`text-xs font-mono px-2 py-1 rounded border bg-transparent cursor-pointer focus:outline-none focus:ring-1 focus:ring-gold/40 ${ROLE_STYLES[u.role] ?? 'bg-bg-elevated text-ink-muted border-border'}`}
                       >
-                        <option value="ADMIN">Admin</option>
-                        <option value="MEMBRE">Membre</option>
-                        <option value="VISITEUR">Visiteur</option>
+                        {ROLES.map(r => (
+                          <option key={r} value={r} className="bg-bg-card text-ink">{ROLE_LABELS[r]}</option>
+                        ))}
                       </select>
                     </td>
                     <td className="px-4 py-3 text-right font-mono text-ink-muted text-xs">{u.actionCount}</td>

@@ -1,6 +1,7 @@
 import { getSession } from './auth'
 import { ensureAdminExists } from './seed'
 import { db } from './db'
+import { can, Permission } from './permissions'
 import { NextResponse } from 'next/server'
 
 let initialized = false
@@ -17,11 +18,7 @@ export interface AuthUser {
   role: string
 }
 
-// guard()          → any authenticated user (VISITEUR, MEMBRE, ADMIN) — for reads
-// guard('member')  → MEMBRE or ADMIN — for pages/reads inaccessibles aux visiteurs
-// guard('write')   → MEMBRE or ADMIN — for mutations
-// guard(true)      → ADMIN only
-export async function guard(level: true | 'write' | 'member' | false = false): Promise<AuthUser | null> {
+export async function guard(permission: Permission | null = null): Promise<AuthUser | null> {
   await init()
   const s = await getSession()
   if (!s.authenticated || !s.userId) return null
@@ -30,15 +27,10 @@ export async function guard(level: true | 'write' | 'member' | false = false): P
   if (!dbUser) return null
   if (dbUser.sessionVersion !== (s.sessionVersion ?? 0)) return null
 
-  const role = dbUser.role
-  if (level === true && role !== 'ADMIN') return null
-  if ((level === 'write' || level === 'member') && role === 'VISITEUR') return null
-  return { userId: s.userId, username: s.username!, role }
+  if (permission !== null && !can(dbUser.role, permission)) return null
+  return { userId: s.userId, username: s.username!, role: dbUser.role }
 }
 
-export function unauthorized(admin = false) {
-  return NextResponse.json(
-    { error: admin ? 'Réservé aux administrateurs' : 'Non autorisé' },
-    { status: 401 }
-  )
+export function unauthorized() {
+  return NextResponse.json({ error: 'Non autorisé' }, { status: 401 })
 }

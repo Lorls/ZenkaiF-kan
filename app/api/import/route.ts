@@ -12,8 +12,8 @@ interface ImportRow {
 }
 
 export async function POST(req: NextRequest) {
-  const user = await guard(true)
-  if (!user) return unauthorized(true)
+  const user = await guard('admin:manage')
+  if (!user) return unauthorized()
 
   const { rows }: { rows: ImportRow[] } = await req.json()
   if (!Array.isArray(rows) || rows.length === 0) return NextResponse.json({ error: 'Aucune donnée' }, { status: 400 })

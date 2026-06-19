@@ -3,8 +3,8 @@ import { db } from '@/lib/db'
 import { guard, unauthorized } from '@/lib/guard'
 
 export async function POST() {
-  const user = await guard(true)
-  if (!user) return unauthorized(true)
+  const user = await guard('admin:manage')
+  if (!user) return unauthorized()
 
   // Cascade deletes donations + taxes via schema onDelete: Cascade
   await db.$transaction([

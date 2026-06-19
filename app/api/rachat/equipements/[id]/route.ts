@@ -6,8 +6,8 @@ const SITUATIONS = ['Non Besoin', 'Besoin', 'Besoin primaire'] as const
 const CATEGORIES = ['T1', 'T2', 'T3', 'T4'] as const
 
 export async function PATCH(req: NextRequest, context: { params: Promise<{ id: string }> }) {
-  const user = await guard(true)
-  if (!user) return unauthorized(true)
+  const user = await guard('rachat:write')
+  if (!user) return unauthorized()
   const { id } = await context.params
   const { nom, categorie, prixPlan, prixCraft, situation } = await req.json()
   if (nom !== undefined && !nom?.trim()) return NextResponse.json({ error: 'Nom requis' }, { status: 400 })
@@ -27,8 +27,8 @@ export async function PATCH(req: NextRequest, context: { params: Promise<{ id: s
 }
 
 export async function DELETE(_: NextRequest, context: { params: Promise<{ id: string }> }) {
-  const user = await guard(true)
-  if (!user) return unauthorized(true)
+  const user = await guard('rachat:write')
+  if (!user) return unauthorized()
   const { id } = await context.params
   await db.rachatEquipement.delete({ where: { id: Number(id) } })
   return NextResponse.json({ ok: true })
