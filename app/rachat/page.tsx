@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react'
 import Navbar from '@/components/Navbar'
+import { can } from '@/lib/permissions'
 
 type Situation = 'Non Besoin' | 'Besoin' | 'Besoin primaire'
 type Categorie = 'T1' | 'T2' | 'T3' | 'T4'
@@ -455,7 +456,7 @@ export default function RachatPage() {
 
   useEffect(() => {
     fetch('/api/auth/me').then(r => r.ok ? r.json() : null).then(d => {
-      if (d?.role === 'ADMIN') setIsAdmin(true)
+      if (d?.role && can(d.role, 'rachat:write')) setIsAdmin(true)
     })
   }, [])
 
