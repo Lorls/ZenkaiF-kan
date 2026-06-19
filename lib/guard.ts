@@ -9,7 +9,11 @@ let initialized = false
 async function init() {
   if (initialized) return
   initialized = true
-  await ensureAdminExists()
+  try {
+    await ensureAdminExists()
+  } catch {
+    // Don't block requests if seed fails
+  }
 }
 
 export interface AuthUser {
@@ -20,15 +24,39 @@ export interface AuthUser {
 
 export async function guard(permission: Permission | null = null): Promise<AuthUser | null> {
   await init()
-  const s = await getSession()
-  if (!s.authenticated || !s.userId) return null
 
-  const dbUser = await db.user.findUnique({ where: { id: s.userId }, select: { role: true, sessionVersion: true } })
-  if (!dbUser) return null
-  if (dbUser.sessionVersion !== (s.sessionVersion ?? 0)) return null
+  try {
+    const s = await getSession()
+    if (!s.authenticated || !s.userId) return null
 
-  if (permission !== null && !can(dbUser.role, permission)) return null
-  return { userId: s.userId, username: s.username!, role: dbUser.role }
+    // Try to query with sessionVersion; fall back without it if column doesn't exist yet
+    let role: string
+    let versionOk = true
+
+    try {
+      const dbUser = await db.user.findUnique({
+        where: { id: s.userId },
+        select: { role: true, sessionVersion: true },
+      })
+      if (!dbUser) return null
+      role = dbUser.role
+      versionOk = dbUser.sessionVersion === (s.sessionVersion ?? 0)
+    } catch {
+      // sessionVersion column not yet applied — fall back to role-only query
+      const dbUser = await db.user.findUnique({
+        where: { id: s.userId },
+        select: { role: true },
+      })
+      if (!dbUser) return null
+      role = dbUser.role
+    }
+
+    if (!versionOk) return null
+    if (permission !== null && !can(role, permission)) return null
+    return { userId: s.userId, username: s.username!, role }
+  } catch {
+    return null
+  }
 }
 
 export function unauthorized() {
