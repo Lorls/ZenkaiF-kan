@@ -17,8 +17,6 @@ export default function Navbar() {
     fetch('/api/auth/me').then(r => r.ok ? r.json() : null).then(d => d && setMe(d))
   }, [])
 
-  useEffect(() => { setOpen(false) }, [pathname])
-
   async function handleLogout() {
     setLoggingOut(true)
     await fetch('/api/auth/logout', { method: 'POST' })
