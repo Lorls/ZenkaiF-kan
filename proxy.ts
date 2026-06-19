@@ -27,7 +27,7 @@ export async function proxy(req: NextRequest) {
     return NextResponse.redirect(url)
   }
 
-  if (ADMIN_ONLY.some(p => pathname.startsWith(p)) && !session.isAdmin) {
+  if (ADMIN_ONLY.some(p => pathname.startsWith(p)) && session.role !== 'ADMIN') {
     const url = req.nextUrl.clone()
     url.pathname = '/dashboard'
     return NextResponse.redirect(url)
