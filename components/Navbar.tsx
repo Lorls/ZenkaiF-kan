@@ -95,8 +95,11 @@ export default function Navbar() {
   const [loggingOut, setLoggingOut] = useState(false)
 
   useEffect(() => {
-    fetch('/api/auth/me').then(r => r.ok ? r.json() : null).then(d => d && setMe(d))
-  }, [])
+    fetch('/api/auth/me').then(r => {
+      if (r.status === 401) { router.push('/login'); return null }
+      return r.ok ? r.json() : null
+    }).then(d => d && setMe(d))
+  }, [router])
 
   async function handleLogout() {
     setLoggingOut(true)

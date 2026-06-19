@@ -1,15 +1,22 @@
 import { db } from './db'
 import bcrypt from 'bcryptjs'
 
+let migrated = false
 let seeded = false
 
-export async function ensureAdminExists() {
-  if (seeded) return
-  seeded = true
-
-  // Migrate legacy role names to new system
+async function migrateRoles() {
+  if (migrated) return
+  migrated = true
   await db.user.updateMany({ where: { role: 'ADMIN' },  data: { role: 'GERANT' } })
   await db.user.updateMany({ where: { role: 'MEMBRE' }, data: { role: 'MEMBRE_SHOMU' } })
+}
+
+export async function ensureAdminExists() {
+  // Migration runs on every cold start (idempotent, cheap when already done)
+  await migrateRoles()
+
+  if (seeded) return
+  seeded = true
 
   const username = process.env.ADMIN_USERNAME || 'admin'
   const password = process.env.SITE_PASSWORD  || 'changeme'
