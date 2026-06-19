@@ -16,16 +16,17 @@ export interface AuthUser {
   role: string
 }
 
-// guard()         → any authenticated user (VISITEUR, MEMBRE, ADMIN) — for reads
-// guard('write')  → MEMBRE or ADMIN — for mutations accessible aux membres
-// guard(true)     → ADMIN only
-export async function guard(level: true | 'write' | false = false): Promise<AuthUser | null> {
+// guard()          → any authenticated user (VISITEUR, MEMBRE, ADMIN) — for reads
+// guard('member')  → MEMBRE or ADMIN — for pages/reads inaccessibles aux visiteurs
+// guard('write')   → MEMBRE or ADMIN — for mutations
+// guard(true)      → ADMIN only
+export async function guard(level: true | 'write' | 'member' | false = false): Promise<AuthUser | null> {
   await init()
   const s = await getSession()
   if (!s.authenticated || !s.userId) return null
   const role = s.role ?? 'MEMBRE'
-  if (level === true  && role !== 'ADMIN')    return null
-  if (level === 'write' && role === 'VISITEUR') return null
+  if (level === true && role !== 'ADMIN') return null
+  if ((level === 'write' || level === 'member') && role === 'VISITEUR') return null
   return { userId: s.userId, username: s.username!, role }
 }
 

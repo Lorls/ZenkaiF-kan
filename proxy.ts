@@ -9,9 +9,9 @@ const sessionOptions = {
   cookieOptions: { secure: process.env.NODE_ENV === 'production' },
 }
 
-const PUBLIC  = ['/login', '/api/auth']
-// Pages réservées aux admins (les routes API gèrent leurs propres permissions)
-const ADMIN_ONLY = ['/admin', '/logs', '/settings', '/import', '/api/admin', '/api/logs']
+const PUBLIC      = ['/login', '/api/auth']
+const ADMIN_ONLY  = ['/admin', '/logs', '/settings', '/import', '/api/admin', '/api/logs']
+const MEMBRE_ONLY = ['/rachat', '/api/rachat']
 
 export async function proxy(req: NextRequest) {
   const res = NextResponse.next()
@@ -27,7 +27,15 @@ export async function proxy(req: NextRequest) {
     return NextResponse.redirect(url)
   }
 
-  if (ADMIN_ONLY.some(p => pathname.startsWith(p)) && session.role !== 'ADMIN') {
+  const role = session.role ?? 'MEMBRE'
+
+  if (ADMIN_ONLY.some(p => pathname.startsWith(p)) && role !== 'ADMIN') {
+    const url = req.nextUrl.clone()
+    url.pathname = '/dashboard'
+    return NextResponse.redirect(url)
+  }
+
+  if (MEMBRE_ONLY.some(p => pathname.startsWith(p)) && role === 'VISITEUR') {
     const url = req.nextUrl.clone()
     url.pathname = '/dashboard'
     return NextResponse.redirect(url)

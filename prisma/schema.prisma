@@ -82,3 +82,21 @@ model Setting {
   key   String @id
   value String
 }
+
+model RachatEquipement {
+  id        Int      @id @default(autoincrement())
+  nom       String
+  categorie String   // T1 | T2 | T3 | T4
+  prixPlan  Float?
+  prixCraft Float?
+  situation String   @default("Non Besoin")
+  createdAt DateTime @default(now())
+}
+
+model RachatRessource {
+  id            Int      @id @default(autoincrement())
+  nom           String
+  prixRachatMax Float?
+  situation     String   @default("Non Besoin")
+  createdAt     DateTime @default(now())
+}
