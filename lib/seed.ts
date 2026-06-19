@@ -8,6 +8,7 @@ async function migrateRoles() {
   if (migrated) return
   migrated = true
   await db.user.updateMany({ where: { role: 'ADMIN' },  data: { role: 'GERANT' } })
+  await db.user.updateMany({ where: { role: 'GÉRANT' }, data: { role: 'GERANT' } })
   await db.user.updateMany({ where: { role: 'MEMBRE' }, data: { role: 'MEMBRE_SHOMU' } })
 }
 
