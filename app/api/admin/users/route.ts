@@ -4,9 +4,20 @@ import { guard, unauthorized } from '@/lib/guard'
 import { ROLES } from '@/lib/permissions'
 import bcrypt from 'bcryptjs'
 
-function generatePassword(len = 8): string {
+function randomPassword(len = 8): string {
   const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZabcdefghjkmnpqrstuvwxyz23456789'
   return Array.from({ length: len }, () => chars[Math.floor(Math.random() * chars.length)]).join('')
+}
+
+async function generateUniquePassword(): Promise<{ plain: string; hash: string }> {
+  const existing = await db.user.findMany({ select: { passwordHash: true } })
+  for (;;) {
+    const plain = randomPassword()
+    const collides = (await Promise.all(existing.map(u => bcrypt.compare(plain, u.passwordHash)))).some(Boolean)
+    if (!collides) {
+      return { plain, hash: await bcrypt.hash(plain, 10) }
+    }
+  }
 }
 
 export async function GET() {
@@ -31,10 +42,10 @@ export async function POST(req: NextRequest) {
   const existing = await db.user.findUnique({ where: { username: username.trim() } })
   if (existing) return NextResponse.json({ error: 'Ce nom existe déjà' }, { status: 409 })
 
-  const password = generatePassword()
+  const { plain, hash } = await generateUniquePassword()
   const newUser = await db.user.create({
-    data: { username: username.trim(), passwordHash: await bcrypt.hash(password, 10), role },
+    data: { username: username.trim(), passwordHash: hash, role },
     select: { id: true, username: true, role: true, createdAt: true },
   })
-  return NextResponse.json({ ...newUser, password }, { status: 201 })
+  return NextResponse.json({ ...newUser, password: plain }, { status: 201 })
 }

@@ -10,8 +10,8 @@ export async function POST(req: NextRequest) {
 
   if (!password) return NextResponse.json({ error: 'Mot de passe manquant' }, { status: 400 })
 
-  // Try every user — passwords are unique, bcrypt compare stops at first match
-  const users = await db.user.findMany()
+  // Scan in stable order (id ASC) so the same password always resolves to the same account
+  const users = await db.user.findMany({ orderBy: { id: 'asc' } })
   let matched = null
   for (const user of users) {
     if (await bcrypt.compare(password, user.passwordHash)) { matched = user; break }
