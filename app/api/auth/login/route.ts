@@ -20,10 +20,11 @@ export async function POST(req: NextRequest) {
   if (!matched) return NextResponse.json({ error: 'Mot de passe incorrect' }, { status: 401 })
 
   const session = await getSession()
-  session.authenticated = true
-  session.userId   = matched.id
-  session.username = matched.username
-  session.role     = matched.role
+  session.authenticated  = true
+  session.userId         = matched.id
+  session.username       = matched.username
+  session.role           = matched.role
+  session.sessionVersion = matched.sessionVersion
   await session.save()
 
   return NextResponse.json({ ok: true, role: matched.role })

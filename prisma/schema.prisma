@@ -9,13 +9,14 @@ datasource db {
 }
 
 model User {
-  id           Int      @id @default(autoincrement())
-  username     String   @unique
-  passwordHash String
-  role         String   @default("MEMBRE")
-  createdAt    DateTime @default(now())
-  logs         Log[]    @relation("Author")
-  reverts      Log[]    @relation("Reverter")
+  id             Int      @id @default(autoincrement())
+  username       String   @unique
+  passwordHash   String
+  role           String   @default("MEMBRE")
+  sessionVersion Int      @default(0)
+  createdAt      DateTime @default(now())
+  logs           Log[]    @relation("Author")
+  reverts        Log[]    @relation("Reverter")
 }
 
 model Log {

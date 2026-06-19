@@ -48,6 +48,9 @@ export async function POST(_: NextRequest, context: { params: Promise<{ id: stri
   if (!user) return unauthorized(true)
   const { id } = await context.params
   const password = generatePassword()
-  await db.user.update({ where: { id: Number(id) }, data: { passwordHash: await bcrypt.hash(password, 10) } })
+  await db.user.update({
+    where: { id: Number(id) },
+    data: { passwordHash: await bcrypt.hash(password, 10), sessionVersion: { increment: 1 } },
+  })
   return NextResponse.json({ password })
 }

@@ -1,5 +1,6 @@
 import { getSession } from './auth'
 import { ensureAdminExists } from './seed'
+import { db } from './db'
 import { NextResponse } from 'next/server'
 
 let initialized = false
@@ -24,7 +25,12 @@ export async function guard(level: true | 'write' | 'member' | false = false): P
   await init()
   const s = await getSession()
   if (!s.authenticated || !s.userId) return null
-  const role = s.role ?? 'MEMBRE'
+
+  const dbUser = await db.user.findUnique({ where: { id: s.userId }, select: { role: true, sessionVersion: true } })
+  if (!dbUser) return null
+  if (dbUser.sessionVersion !== (s.sessionVersion ?? 0)) return null
+
+  const role = dbUser.role
   if (level === true && role !== 'ADMIN') return null
   if ((level === 'write' || level === 'member') && role === 'VISITEUR') return null
   return { userId: s.userId, username: s.username!, role }
