@@ -129,6 +129,7 @@ export default function LogsPage() {
   return (
     <>
       <Navbar />
+      <div className="ml-64">
       <main className="max-w-7xl mx-auto px-4 sm:px-6 py-8 space-y-5">
         <div className="flex items-center justify-between">
           <div>
@@ -338,6 +339,7 @@ export default function LogsPage() {
           </div>
         </div>
       )}
+      </div>
     </>
   )
 }

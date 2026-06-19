@@ -166,10 +166,12 @@ export default function NinjaPage() {
     return (
       <>
         <Navbar />
+      <div className="ml-64">
         <div className="max-w-4xl mx-auto px-4 py-8 animate-pulse space-y-4">
           <div className="h-8 bg-bg-card rounded w-48" />
           <div className="h-32 bg-bg-card rounded" />
         </div>
+      </div>
       </>
     )
   }
@@ -179,6 +181,7 @@ export default function NinjaPage() {
   return (
     <>
       <Navbar />
+      <div className="ml-64">
       <main className="max-w-7xl mx-auto px-4 sm:px-6 py-8 space-y-6">
         {/* Back */}
         <button
@@ -427,6 +430,7 @@ export default function NinjaPage() {
           </div>
         )}
       </main>
+      </div>
     </>
   )
 }

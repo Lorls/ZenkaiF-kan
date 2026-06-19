@@ -60,6 +60,7 @@ export default function AdminPage() {
   return (
     <>
       <Navbar />
+      <div className="ml-64">
       <main className="max-w-3xl mx-auto px-4 sm:px-6 py-8 space-y-6">
         <div>
           <h1 className="text-2xl font-bold text-ink">Panel Admin</h1>
@@ -173,6 +174,7 @@ export default function AdminPage() {
           )}
         </div>
       </main>
+      </div>
     </>
   )
 }

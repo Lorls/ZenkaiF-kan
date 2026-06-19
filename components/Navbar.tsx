@@ -11,7 +11,6 @@ export default function Navbar() {
   const router = useRouter()
   const [me, setMe] = useState<Me | null>(null)
   const [loggingOut, setLoggingOut] = useState(false)
-  const [open, setOpen] = useState(true)
 
   useEffect(() => {
     fetch('/api/auth/me').then(r => r.ok ? r.json() : null).then(d => d && setMe(d))
@@ -55,113 +54,59 @@ export default function Navbar() {
   const visibleNav = nav.filter(n => n.always || me?.isAdmin)
 
   return (
-    <>
-      {/* Top bar */}
-      <header className="sticky top-0 z-50 border-b border-border bg-bg-base/90 backdrop-blur-sm">
-        <div className="max-w-7xl mx-auto px-4 h-14 flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <button
-              onClick={() => setOpen(true)}
-              className="p-2 rounded-lg text-ink-muted hover:text-ink hover:bg-bg-elevated transition-colors"
-              aria-label="Ouvrir le menu"
-            >
-              <svg viewBox="0 0 24 24" className="w-5 h-5" fill="none" stroke="currentColor" strokeWidth="1.5">
-                <path strokeLinecap="round" strokeLinejoin="round" d="M3.75 6.75h16.5M3.75 12h16.5m-16.5 5.25h16.5" />
-              </svg>
-            </button>
+    <aside className="fixed top-0 left-0 h-full w-64 bg-bg-card border-r border-border flex flex-col z-40">
+      {/* Logo */}
+      <div className="h-14 flex items-center px-4 border-b border-border shrink-0">
+        <Link href="/dashboard" className="flex items-center gap-2 group">
+          <svg viewBox="0 0 24 24" className="w-5 h-5 text-gold group-hover:text-gold-light transition-colors" fill="none" stroke="currentColor" strokeWidth="1.5">
+            <path strokeLinecap="round" strokeLinejoin="round" d="M12 3v1m0 16v1M4.22 4.22l.707.707m12.728 12.728.707.707M1 12h1m20 0h1M4.22 19.78l.707-.707M18.95 5.05l.707-.707M12 6a6 6 0 100 12 6 6 0 000-12z" />
+          </svg>
+          <span className="font-bold text-ink tracking-tight">Koeki</span>
+        </Link>
+      </div>
 
-            <Link href="/dashboard" className="flex items-center gap-2 group">
-              <svg viewBox="0 0 24 24" className="w-5 h-5 text-gold group-hover:text-gold-light transition-colors" fill="none" stroke="currentColor" strokeWidth="1.5">
-                <path strokeLinecap="round" strokeLinejoin="round" d="M12 3v1m0 16v1M4.22 4.22l.707.707m12.728 12.728.707.707M1 12h1m20 0h1M4.22 19.78l.707-.707M18.95 5.05l.707-.707M12 6a6 6 0 100 12 6 6 0 000-12z" />
-              </svg>
-              <span className="font-bold text-ink tracking-tight">Koeki</span>
-            </Link>
-          </div>
-
-          {me && (
-            <div className="flex items-center gap-2">
-              <div className={`w-7 h-7 rounded-full flex items-center justify-center text-xs font-bold ${me.isAdmin ? 'bg-gold/20 text-gold' : 'bg-bg-elevated text-ink-muted'}`}>
-                {me.username?.[0]?.toUpperCase() ?? '?'}
-              </div>
-              <span className="text-sm text-ink-muted hidden sm:block">{me.username}</span>
-              {me.isAdmin && <span className="text-[10px] font-mono bg-gold/10 text-gold px-1.5 py-0.5 rounded">ADMIN</span>}
-            </div>
-          )}
-        </div>
-      </header>
-
-      {/* Backdrop */}
-      {open && (
-        <div
-          className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm"
-          onClick={() => setOpen(false)}
-        />
-      )}
-
-      {/* Drawer */}
-      <aside className={`fixed top-0 left-0 z-50 h-full w-64 bg-bg-card border-r border-border flex flex-col transition-transform duration-300 ease-in-out ${open ? 'translate-x-0' : '-translate-x-full'}`}>
-        {/* Drawer header */}
-        <div className="h-14 flex items-center justify-between px-4 border-b border-border shrink-0">
-          <Link href="/dashboard" className="flex items-center gap-2 group" onClick={() => setOpen(false)}>
-            <svg viewBox="0 0 24 24" className="w-5 h-5 text-gold group-hover:text-gold-light transition-colors" fill="none" stroke="currentColor" strokeWidth="1.5">
-              <path strokeLinecap="round" strokeLinejoin="round" d="M12 3v1m0 16v1M4.22 4.22l.707.707m12.728 12.728.707.707M1 12h1m20 0h1M4.22 19.78l.707-.707M18.95 5.05l.707-.707M12 6a6 6 0 100 12 6 6 0 000-12z" />
-            </svg>
-            <span className="font-bold text-ink tracking-tight">Koeki</span>
-          </Link>
-          <button
-            onClick={() => setOpen(false)}
-            className="p-1.5 rounded-lg text-ink-muted hover:text-ink hover:bg-bg-elevated transition-colors"
-            aria-label="Fermer le menu"
+      {/* Nav links */}
+      <nav className="flex-1 overflow-y-auto py-4 px-3 flex flex-col gap-1">
+        {visibleNav.map(n => (
+          <Link
+            key={n.href}
+            href={n.href}
+            className={`flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors duration-200 ${
+              pathname.startsWith(n.href)
+                ? 'bg-gold/10 text-gold'
+                : 'text-ink-muted hover:text-ink hover:bg-bg-elevated'
+            }`}
           >
-            <svg viewBox="0 0 24 24" className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth="1.5">
-              <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+            <span className={pathname.startsWith(n.href) ? 'text-gold' : 'text-ink-muted'}>{n.icon}</span>
+            {n.label}
+          </Link>
+        ))}
+      </nav>
+
+      {/* User + logout */}
+      {me && (
+        <div className="shrink-0 border-t border-border px-3 py-4 flex flex-col gap-2">
+          <div className="flex items-center gap-2.5 px-3 py-2">
+            <div className={`w-7 h-7 rounded-full flex items-center justify-center text-xs font-bold shrink-0 ${me.isAdmin ? 'bg-gold/20 text-gold' : 'bg-bg-elevated text-ink-muted'}`}>
+              {me.username?.[0]?.toUpperCase() ?? '?'}
+            </div>
+            <div className="flex flex-col min-w-0">
+              <span className="text-sm text-ink font-medium truncate">{me.username}</span>
+              {me.isAdmin && <span className="text-[10px] font-mono text-gold">ADMIN</span>}
+            </div>
+          </div>
+          <button
+            onClick={handleLogout}
+            disabled={loggingOut}
+            className="flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium text-ink-muted hover:text-red-400 hover:bg-red-950/40 transition-colors duration-200 disabled:opacity-50"
+          >
+            <svg viewBox="0 0 24 24" className="w-5 h-5" fill="none" stroke="currentColor" strokeWidth="1.5">
+              <path strokeLinecap="round" strokeLinejoin="round" d="M15.75 9V5.25A2.25 2.25 0 0013.5 3h-6a2.25 2.25 0 00-2.25 2.25v13.5A2.25 2.25 0 007.5 21h6a2.25 2.25 0 002.25-2.25V15M12 9l-3 3m0 0l3 3m-3-3h12.75" />
             </svg>
+            Déconnexion
           </button>
         </div>
-
-        {/* Nav links */}
-        <nav className="flex-1 overflow-y-auto py-4 px-3 flex flex-col gap-1">
-          {visibleNav.map(n => (
-            <Link
-              key={n.href}
-              href={n.href}
-              className={`flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors duration-200 ${
-                pathname.startsWith(n.href)
-                  ? 'bg-gold/10 text-gold'
-                  : 'text-ink-muted hover:text-ink hover:bg-bg-elevated'
-              }`}
-            >
-              <span className={pathname.startsWith(n.href) ? 'text-gold' : 'text-ink-muted'}>{n.icon}</span>
-              {n.label}
-            </Link>
-          ))}
-        </nav>
-
-        {/* User + logout */}
-        {me && (
-          <div className="shrink-0 border-t border-border px-3 py-4 flex flex-col gap-2">
-            <div className="flex items-center gap-2.5 px-3 py-2">
-              <div className={`w-7 h-7 rounded-full flex items-center justify-center text-xs font-bold shrink-0 ${me.isAdmin ? 'bg-gold/20 text-gold' : 'bg-bg-elevated text-ink-muted'}`}>
-                {me.username?.[0]?.toUpperCase() ?? '?'}
-              </div>
-              <div className="flex flex-col min-w-0">
-                <span className="text-sm text-ink font-medium truncate">{me.username}</span>
-                {me.isAdmin && <span className="text-[10px] font-mono text-gold">ADMIN</span>}
-              </div>
-            </div>
-            <button
-              onClick={handleLogout}
-              disabled={loggingOut}
-              className="flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium text-ink-muted hover:text-red-400 hover:bg-red-950/40 transition-colors duration-200 disabled:opacity-50"
-            >
-              <svg viewBox="0 0 24 24" className="w-5 h-5" fill="none" stroke="currentColor" strokeWidth="1.5">
-                <path strokeLinecap="round" strokeLinejoin="round" d="M15.75 9V5.25A2.25 2.25 0 0013.5 3h-6a2.25 2.25 0 00-2.25 2.25v13.5A2.25 2.25 0 007.5 21h6a2.25 2.25 0 002.25-2.25V15M12 9l-3 3m0 0l3 3m-3-3h12.75" />
-              </svg>
-              Déconnexion
-            </button>
-          </div>
-        )}
-      </aside>
-    </>
+      )}
+    </aside>
   )
 }

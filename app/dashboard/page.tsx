@@ -83,6 +83,7 @@ export default function DashboardPage() {
   return (
     <>
       <Navbar />
+      <div className="ml-64">
       <main className="max-w-7xl mx-auto px-4 sm:px-6 py-8">
         {/* Header */}
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-8">
@@ -175,6 +176,7 @@ export default function DashboardPage() {
           onAdd={(ninja) => setNinjas((prev) => [...prev, ninja].sort((a, b) => a.name.localeCompare(b.name)))}
         />
       )}
+      </div>
     </>
   )
 }
