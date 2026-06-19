@@ -1,8 +1,8 @@
 import { NextResponse } from 'next/server'
-import { getSession } from '@/lib/auth'
+import { guard } from '@/lib/guard'
 
 export async function GET() {
-  const s = await getSession()
-  if (!s.authenticated) return NextResponse.json(null, { status: 401 })
-  return NextResponse.json({ userId: s.userId, username: s.username, role: s.role ?? 'MEMBRE' })
+  const user = await guard()
+  if (!user) return NextResponse.json(null, { status: 401 })
+  return NextResponse.json({ userId: user.userId, username: user.username, role: user.role })
 }
