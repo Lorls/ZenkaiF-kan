@@ -5,7 +5,7 @@ export interface SessionData {
   authenticated: boolean
   userId?: number
   username?: string
-  isAdmin?: boolean
+  role?: string
 }
 
 const sessionOptions = {
@@ -28,5 +28,5 @@ export async function isAuthenticated(): Promise<boolean> {
 
 export async function isAdmin(): Promise<boolean> {
   const s = await getSession()
-  return s.authenticated === true && s.isAdmin === true
+  return s.authenticated === true && s.role === 'ADMIN'
 }

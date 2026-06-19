@@ -4,7 +4,7 @@ import Link from 'next/link'
 import { usePathname, useRouter } from 'next/navigation'
 import { useState, useEffect } from 'react'
 
-interface Me { username: string; isAdmin: boolean }
+interface Me { username: string; role: string }
 
 export default function Navbar() {
   const pathname = usePathname()
@@ -51,7 +51,7 @@ export default function Navbar() {
     ), always: false },
   ]
 
-  const visibleNav = nav.filter(n => n.always || me?.isAdmin)
+  const visibleNav = nav.filter(n => n.always || me?.role === 'ADMIN')
 
   return (
     <aside className="fixed top-0 left-0 h-full w-64 bg-bg-card border-r border-border flex flex-col z-40">
@@ -87,12 +87,12 @@ export default function Navbar() {
       {me && (
         <div className="shrink-0 border-t border-border px-3 py-4 flex flex-col gap-2">
           <div className="flex items-center gap-2.5 px-3 py-2">
-            <div className={`w-7 h-7 rounded-full flex items-center justify-center text-xs font-bold shrink-0 ${me.isAdmin ? 'bg-gold/20 text-gold' : 'bg-bg-elevated text-ink-muted'}`}>
+            <div className={`w-7 h-7 rounded-full flex items-center justify-center text-xs font-bold shrink-0 ${me.role === 'ADMIN' ? 'bg-gold/20 text-gold' : 'bg-bg-elevated text-ink-muted'}`}>
               {me.username?.[0]?.toUpperCase() ?? '?'}
             </div>
             <div className="flex flex-col min-w-0">
               <span className="text-sm text-ink font-medium truncate">{me.username}</span>
-              {me.isAdmin && <span className="text-[10px] font-mono text-gold">ADMIN</span>}
+              <span className={`text-[10px] font-mono ${me.role === 'ADMIN' ? 'text-gold' : me.role === 'VISITEUR' ? 'text-ink-faint' : 'text-ink-muted'}`}>{me.role}</span>
             </div>
           </div>
           <button

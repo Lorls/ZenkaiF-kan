@@ -4,7 +4,7 @@ import { guard, unauthorized } from '@/lib/guard'
 import { logAction } from '@/lib/log'
 
 export async function POST(req: NextRequest) {
-  const user = await guard()
+  const user = await guard('write')
   if (!user) return unauthorized()
 
   const { ninjaId, resource, amount } = await req.json()

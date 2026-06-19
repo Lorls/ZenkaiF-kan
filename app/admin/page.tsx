@@ -3,22 +3,38 @@
 import { useState, useEffect } from 'react'
 import Navbar from '@/components/Navbar'
 
-interface User { id: number; username: string; isAdmin: boolean; createdAt: string; actionCount: number }
+type Role = 'ADMIN' | 'MEMBRE' | 'VISITEUR'
+
+interface User { id: number; username: string; role: Role; createdAt: string; actionCount: number }
 interface NewUser extends User { password: string }
+
+const ROLE_LABELS: Record<Role, string> = { ADMIN: 'Admin', MEMBRE: 'Membre', VISITEUR: 'Visiteur' }
+const ROLE_STYLES: Record<Role, string> = {
+  ADMIN: 'bg-gold/10 text-gold border-gold/20',
+  MEMBRE: 'bg-blue-950/40 text-blue-400 border-blue-900/40',
+  VISITEUR: 'bg-bg-elevated text-ink-muted border-border',
+}
 
 export default function AdminPage() {
   const [users, setUsers] = useState<User[]>([])
+  const [me, setMe] = useState<{ userId: number } | null>(null)
   const [loading, setLoading] = useState(true)
   const [newUsername, setNewUsername] = useState('')
+  const [newRole, setNewRole] = useState<Role>('MEMBRE')
   const [creating, setCreating] = useState(false)
   const [created, setCreated] = useState<NewUser | null>(null)
   const [resetResult, setResetResult] = useState<{ id: number; password: string } | null>(null)
   const [wiping, setWiping] = useState(false)
   const [error, setError] = useState('')
+  const [roleError, setRoleError] = useState('')
 
   async function load() {
-    const data = await fetch('/api/admin/users').then(r => r.json())
+    const [data, meData] = await Promise.all([
+      fetch('/api/admin/users').then(r => r.json()),
+      fetch('/api/auth/me').then(r => r.ok ? r.json() : null),
+    ])
     setUsers(Array.isArray(data) ? data : [])
+    setMe(meData)
     setLoading(false)
   }
   useEffect(() => { load() }, [])
@@ -30,7 +46,7 @@ export default function AdminPage() {
     setError('')
     const res = await fetch('/api/admin/users', {
       method: 'POST', headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ username: newUsername }),
+      body: JSON.stringify({ username: newUsername, role: newRole }),
     })
     const data = await res.json()
     if (res.ok) { setCreated(data); setNewUsername(''); load() }
@@ -40,8 +56,13 @@ export default function AdminPage() {
 
   async function handleDelete(id: number, username: string) {
     if (!confirm(`Supprimer le compte de ${username} ?`)) return
-    await fetch(`/api/admin/users/${id}`, { method: 'DELETE' })
-    load()
+    const res = await fetch(`/api/admin/users/${id}`, { method: 'DELETE' })
+    if (!res.ok) {
+      const d = await res.json()
+      setRoleError(d.error)
+    } else {
+      load()
+    }
   }
 
   async function handleWipe() {
@@ -57,6 +78,20 @@ export default function AdminPage() {
     if (res.ok) setResetResult({ id, password: data.password })
   }
 
+  async function handleRoleChange(id: number, role: Role) {
+    setRoleError('')
+    const res = await fetch(`/api/admin/users/${id}`, {
+      method: 'PATCH', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ role }),
+    })
+    if (!res.ok) {
+      const d = await res.json()
+      setRoleError(d.error)
+    } else {
+      setUsers(prev => prev.map(u => u.id === id ? { ...u, role } : u))
+    }
+  }
+
   return (
     <>
       <Navbar />
@@ -69,10 +104,19 @@ export default function AdminPage() {
 
         {/* Create user */}
         <div className="card p-6">
-          <h2 className="text-base font-semibold text-ink mb-4">Créer un compte ninja</h2>
+          <h2 className="text-base font-semibold text-ink mb-4">Créer un compte</h2>
           <form onSubmit={handleCreate} className="flex gap-2">
             <input type="text" value={newUsername} onChange={e => setNewUsername(e.target.value)}
-              className="input flex-1" placeholder="Nom d'utilisateur (ex: Temari)" required />
+              className="input flex-1" placeholder="Nom d'utilisateur" required />
+            <select
+              value={newRole}
+              onChange={e => setNewRole(e.target.value as Role)}
+              className="input w-36"
+            >
+              <option value="MEMBRE">Membre</option>
+              <option value="VISITEUR">Visiteur</option>
+              <option value="ADMIN">Admin</option>
+            </select>
             <button type="submit" disabled={creating || !newUsername.trim()} className="btn-primary whitespace-nowrap">
               {creating ? 'Création...' : 'Créer'}
             </button>
@@ -90,7 +134,7 @@ export default function AdminPage() {
                   Copier
                 </button>
               </div>
-              <p className="text-xs text-ink-muted mt-2">Identifiant : <strong>{created.username}</strong> — Ce mot de passe ne sera plus affiché.</p>
+              <p className="text-xs text-ink-muted mt-2">Identifiant : <strong>{created.username}</strong> · Rôle : <strong>{ROLE_LABELS[created.role]}</strong> — Ce mot de passe ne sera plus affiché.</p>
               <button onClick={() => setCreated(null)} className="text-xs text-ink-faint mt-2 hover:text-ink">Fermer</button>
             </div>
           )}
@@ -108,27 +152,17 @@ export default function AdminPage() {
           </div>
         )}
 
-        {/* Danger zone */}
-        <div className="card p-6 border-red-900/50">
-          <h2 className="text-base font-semibold text-red-400 mb-1">Zone dangereuse</h2>
-          <p className="text-ink-muted text-sm mb-4">
-            Supprime tous les ninjas, leurs dons, taxes et logs. Les comptes utilisateurs et les paramètres sont conservés.
-          </p>
-          <button
-            onClick={handleWipe}
-            disabled={wiping}
-            className="flex items-center gap-2 px-4 py-2 rounded-lg bg-red-950 border border-red-900 text-red-400 hover:bg-red-900 hover:text-red-300 transition-colors duration-200 text-sm font-medium cursor-pointer disabled:opacity-50"
-          >
-            <svg viewBox="0 0 24 24" className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth="1.5">
-              <path strokeLinecap="round" strokeLinejoin="round" d="M14.74 9l-.346 9m-4.788 0L9.26 9m9.968-3.21c.342.052.682.107 1.022.166m-1.022-.165L18.16 19.673a2.25 2.25 0 01-2.244 2.077H8.084a2.25 2.25 0 01-2.244-2.077L4.772 5.79m14.456 0a48.108 48.108 0 00-3.478-.397m-12 .562c.34-.059.68-.114 1.022-.165m0 0a48.11 48.11 0 013.478-.397m7.5 0v-.916c0-1.18-.91-2.164-2.09-2.201a51.964 51.964 0 00-3.32 0c-1.18.037-2.09 1.022-2.09 2.201v.916m7.5 0a48.667 48.667 0 00-7.5 0" />
-            </svg>
-            {wiping ? 'Suppression...' : 'Supprimer tous les ninjas et données'}
-          </button>
-        </div>
+        {/* Role error */}
+        {roleError && (
+          <div className="card p-3 border-red-900/50 bg-red-950/20">
+            <p className="text-red-400 text-sm">{roleError}</p>
+            <button onClick={() => setRoleError('')} className="text-xs text-ink-faint mt-1 hover:text-ink">Fermer</button>
+          </div>
+        )}
 
         {/* Users list */}
         <div className="card overflow-hidden">
-          <div className="px-4 py-3 border-b border-border flex items-center justify-between">
+          <div className="px-4 py-3 border-b border-border">
             <h2 className="text-base font-semibold text-ink">Comptes ({users.length})</h2>
           </div>
           {loading ? (
@@ -147,31 +181,59 @@ export default function AdminPage() {
               <tbody>
                 {users.map(u => (
                   <tr key={u.id} className="border-b border-border-subtle last:border-0">
-                    <td className="px-4 py-3 font-medium text-ink flex items-center gap-2">
-                      <div className={`w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold ${u.isAdmin ? 'bg-gold/20 text-gold' : 'bg-bg-elevated text-ink-muted'}`}>
-                        {u.username[0].toUpperCase()}
+                    <td className="px-4 py-3">
+                      <div className="flex items-center gap-2">
+                        <div className={`w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold ${u.role === 'ADMIN' ? 'bg-gold/20 text-gold' : 'bg-bg-elevated text-ink-muted'}`}>
+                          {u.username[0].toUpperCase()}
+                        </div>
+                        <span className="font-medium text-ink">{u.username}</span>
+                        {u.id === me?.userId && <span className="text-[10px] text-ink-faint">(moi)</span>}
                       </div>
-                      {u.username}
                     </td>
                     <td className="px-4 py-3">
-                      {u.isAdmin ? <span className="text-xs font-mono bg-gold/10 text-gold px-2 py-0.5 rounded">ADMIN</span>
-                                 : <span className="text-xs text-ink-muted">Ninja</span>}
+                      <select
+                        value={u.role}
+                        onChange={e => handleRoleChange(u.id, e.target.value as Role)}
+                        className={`text-xs font-mono px-2 py-1 rounded border bg-transparent cursor-pointer focus:outline-none focus:ring-1 focus:ring-gold/40 ${ROLE_STYLES[u.role]}`}
+                      >
+                        <option value="ADMIN">Admin</option>
+                        <option value="MEMBRE">Membre</option>
+                        <option value="VISITEUR">Visiteur</option>
+                      </select>
                     </td>
                     <td className="px-4 py-3 text-right font-mono text-ink-muted text-xs">{u.actionCount}</td>
                     <td className="px-4 py-3 text-xs text-ink-muted">{new Date(u.createdAt).toLocaleDateString('fr-FR')}</td>
                     <td className="px-4 py-3">
-                      {!u.isAdmin && (
-                        <div className="flex items-center gap-1 justify-end">
-                          <button onClick={() => handleReset(u.id)} className="btn-ghost text-xs px-2 py-1">Réinit. mdp</button>
+                      <div className="flex items-center gap-1 justify-end">
+                        <button onClick={() => handleReset(u.id)} className="btn-ghost text-xs px-2 py-1">Réinit. mdp</button>
+                        {u.id !== me?.userId && (
                           <button onClick={() => handleDelete(u.id, u.username)} className="btn-danger text-xs px-2 py-1">Supprimer</button>
-                        </div>
-                      )}
+                        )}
+                      </div>
                     </td>
                   </tr>
                 ))}
               </tbody>
             </table>
           )}
+        </div>
+
+        {/* Danger zone */}
+        <div className="card p-6 border-red-900/50">
+          <h2 className="text-base font-semibold text-red-400 mb-1">Zone dangereuse</h2>
+          <p className="text-ink-muted text-sm mb-4">
+            Supprime tous les ninjas, leurs dons, taxes et logs. Les comptes utilisateurs et les paramètres sont conservés.
+          </p>
+          <button
+            onClick={handleWipe}
+            disabled={wiping}
+            className="flex items-center gap-2 px-4 py-2 rounded-lg bg-red-950 border border-red-900 text-red-400 hover:bg-red-900 hover:text-red-300 transition-colors duration-200 text-sm font-medium cursor-pointer disabled:opacity-50"
+          >
+            <svg viewBox="0 0 24 24" className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth="1.5">
+              <path strokeLinecap="round" strokeLinejoin="round" d="M14.74 9l-.346 9m-4.788 0L9.26 9m9.968-3.21c.342.052.682.107 1.022.166m-1.022-.165L18.16 19.673a2.25 2.25 0 01-2.244 2.077H8.084a2.25 2.25 0 01-2.244-2.077L4.772 5.79m14.456 0a48.108 48.108 0 00-3.478-.397m-12 .562c.34-.059.68-.114 1.022-.165m0 0a48.11 48.11 0 013.478-.397m7.5 0v-.916c0-1.18-.91-2.164-2.09-2.201a51.964 51.964 0 00-3.32 0c-1.18.037-2.09 1.022-2.09 2.201v.916m7.5 0a48.667 48.667 0 00-7.5 0" />
+            </svg>
+            {wiping ? 'Suppression...' : 'Supprimer tous les ninjas et données'}
+          </button>
         </div>
       </main>
       </div>

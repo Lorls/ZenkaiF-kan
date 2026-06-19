@@ -16,7 +16,7 @@ export async function GET(_: NextRequest, context: { params: Promise<{ id: strin
 }
 
 export async function PATCH(req: NextRequest, context: { params: Promise<{ id: string }> }) {
-  const user = await guard()
+  const user = await guard('write')
   if (!user) return unauthorized()
   const { id } = await context.params
 
@@ -41,7 +41,7 @@ export async function PATCH(req: NextRequest, context: { params: Promise<{ id: s
 }
 
 export async function DELETE(_: NextRequest, context: { params: Promise<{ id: string }> }) {
-  const user = await guard()
+  const user = await guard('write')
   if (!user) return unauthorized()
   const { id } = await context.params
 

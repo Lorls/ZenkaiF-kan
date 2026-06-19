@@ -39,6 +39,7 @@ export default function NinjaPage() {
   const [ninja, setNinja] = useState<Ninja | null>(null)
   const [resourceValues, setResourceValues] = useState<ResourceValues>({})
   const [loading, setLoading] = useState(true)
+  const [canWrite, setCanWrite] = useState(true)
 
   // Edit states
   const [editName, setEditName] = useState(false)
@@ -56,16 +57,18 @@ export default function NinjaPage() {
   const nextWeekStart = getNextWeekStart()
 
   const load = useCallback(async () => {
-    const [ninjaRes, valuesRes] = await Promise.all([
+    const [ninjaRes, valuesRes, meRes] = await Promise.all([
       fetch(`/api/ninjas/${id}`),
       fetch('/api/settings'),
+      fetch('/api/auth/me'),
     ])
     if (!ninjaRes.ok) { router.push('/dashboard'); return }
-    const [ninjaData, valuesData] = await Promise.all([ninjaRes.json(), valuesRes.json()])
+    const [ninjaData, valuesData, meData] = await Promise.all([ninjaRes.json(), valuesRes.json(), meRes.ok ? meRes.json() : null])
     setNinja(ninjaData)
     setNameInput(ninjaData.name)
     setPointsInput(String(Math.round(ninjaData.points)))
     setResourceValues(valuesData)
+    setCanWrite(meData?.role !== 'VISITEUR')
     setLoading(false)
   }, [id, router])
 
@@ -200,7 +203,9 @@ export default function NinjaPage() {
             {/* Name */}
             <div className="flex-1">
               <p className="text-xs uppercase tracking-widest text-ink-muted mb-2 font-mono">Ninja</p>
-              {editName ? (
+              {!canWrite ? (
+                <h1 className="text-2xl font-bold text-ink">{ninja.name}</h1>
+              ) : editName ? (
                 <div className="flex items-center gap-2">
                   <input
                     type="text"
@@ -229,7 +234,11 @@ export default function NinjaPage() {
             {/* Points */}
             <div className="sm:text-right">
               <p className="text-xs uppercase tracking-widest text-ink-muted mb-2 font-mono">Points</p>
-              {editPoints ? (
+              {!canWrite ? (
+                <p className="font-mono text-3xl font-bold text-gold sm:text-right">
+                  {Math.round(ninja.points).toLocaleString('fr-FR')}
+                </p>
+              ) : editPoints ? (
                 <div className="flex items-center gap-2 sm:justify-end">
                   <input
                     type="number"
@@ -253,7 +262,7 @@ export default function NinjaPage() {
                   </svg>
                 </button>
               )}
-              <p className="text-xs text-ink-muted mt-0.5">Cliquer pour modifier</p>
+              {canWrite && <p className="text-xs text-ink-muted mt-0.5">Cliquer pour modifier</p>}
             </div>
           </div>
         </div>
@@ -288,11 +297,12 @@ export default function NinjaPage() {
                       {formatWeekRange(weekStart)}
                     </span>
                     <button
-                      onClick={() => toggleTax(weekStart, paid)}
-                      className={`flex items-center gap-1 text-xs font-medium px-2 py-1 rounded-full border transition-all duration-200 cursor-pointer shrink-0 ${
+                      onClick={() => canWrite && toggleTax(weekStart, paid)}
+                      disabled={!canWrite}
+                      className={`flex items-center gap-1 text-xs font-medium px-2 py-1 rounded-full border transition-all duration-200 shrink-0 ${canWrite ? 'cursor-pointer' : 'cursor-default'} ${
                         paid
-                          ? 'badge-paid hover:bg-emerald-900'
-                          : 'badge-unpaid hover:bg-red-900'
+                          ? `badge-paid ${canWrite ? 'hover:bg-emerald-900' : ''}`
+                          : `badge-unpaid ${canWrite ? 'hover:bg-red-900' : ''}`
                       }`}
                     >
                       {paid ? (
@@ -340,58 +350,61 @@ export default function NinjaPage() {
                       <p className="text-xs text-gold leading-none">+{Math.round(points)} pts</p>
                     )}
 
-                    {/* Pending controls */}
-                    <div className="mt-auto pt-1.5 border-t border-border-subtle/50 flex items-center gap-1">
-                      {/* − */}
-                      <button
-                        onClick={() => setPending(resource, pending - 1)}
-                        disabled={pending <= 0}
-                        className="w-6 h-6 rounded flex items-center justify-center border border-gold/30 bg-gold/5 text-gold/70 hover:border-gold/70 hover:bg-gold/15 hover:text-gold disabled:opacity-25 disabled:cursor-not-allowed transition-all duration-150 cursor-pointer text-sm font-bold leading-none select-none"
-                      >−</button>
+                    {/* Pending controls + confirm — hidden for VISITEUR */}
+                    {canWrite && (
+                      <>
+                        <div className="mt-auto pt-1.5 border-t border-border-subtle/50 flex items-center gap-1">
+                          {/* − */}
+                          <button
+                            onClick={() => setPending(resource, pending - 1)}
+                            disabled={pending <= 0}
+                            className="w-6 h-6 rounded flex items-center justify-center border border-gold/30 bg-gold/5 text-gold/70 hover:border-gold/70 hover:bg-gold/15 hover:text-gold disabled:opacity-25 disabled:cursor-not-allowed transition-all duration-150 cursor-pointer text-sm font-bold leading-none select-none"
+                          >−</button>
 
-                      {/* Editable amount */}
-                      {isEditing ? (
-                        <input
-                          type="number"
-                          value={editingValue}
-                          onChange={(e) => setEditingValue(e.target.value)}
-                          onBlur={commitEditing}
-                          onKeyDown={(e) => { if (e.key === 'Enter' || e.key === 'Escape') commitEditing() }}
-                          className="flex-1 min-w-0 font-mono text-xs text-center bg-bg-elevated border border-gold/40 rounded px-1 py-0.5 outline-none text-ink"
-                          style={{ MozAppearance: 'textfield' }}
-                          autoFocus
-                        />
-                      ) : (
-                        <button
-                          onClick={() => startEditing(resource)}
-                          className={`flex-1 font-mono text-xs text-center rounded px-1 py-0.5 transition-colors duration-150 cursor-pointer border ${
-                            pending > 0
-                              ? 'text-gold border-gold/30 bg-gold/10 hover:bg-gold/15'
-                              : 'text-ink-faint border-transparent hover:border-border-subtle hover:text-ink-muted'
-                          }`}
-                        >
-                          {pending > 0 ? pending.toLocaleString('fr-FR') : '0'}
-                        </button>
-                      )}
+                          {/* Editable amount */}
+                          {isEditing ? (
+                            <input
+                              type="number"
+                              value={editingValue}
+                              onChange={(e) => setEditingValue(e.target.value)}
+                              onBlur={commitEditing}
+                              onKeyDown={(e) => { if (e.key === 'Enter' || e.key === 'Escape') commitEditing() }}
+                              className="flex-1 min-w-0 font-mono text-xs text-center bg-bg-elevated border border-gold/40 rounded px-1 py-0.5 outline-none text-ink"
+                              style={{ MozAppearance: 'textfield' }}
+                              autoFocus
+                            />
+                          ) : (
+                            <button
+                              onClick={() => startEditing(resource)}
+                              className={`flex-1 font-mono text-xs text-center rounded px-1 py-0.5 transition-colors duration-150 cursor-pointer border ${
+                                pending > 0
+                                  ? 'text-gold border-gold/30 bg-gold/10 hover:bg-gold/15'
+                                  : 'text-ink-faint border-transparent hover:border-border-subtle hover:text-ink-muted'
+                              }`}
+                            >
+                              {pending > 0 ? pending.toLocaleString('fr-FR') : '0'}
+                            </button>
+                          )}
 
-                      {/* + */}
-                      <button
-                        onClick={() => setPending(resource, pending + 1)}
-                        className="w-6 h-6 rounded flex items-center justify-center border border-gold/30 bg-gold/5 text-gold/70 hover:border-gold/70 hover:bg-gold/15 hover:text-gold transition-all duration-150 cursor-pointer text-sm font-bold leading-none select-none"
-                      >+</button>
-                    </div>
+                          {/* + */}
+                          <button
+                            onClick={() => setPending(resource, pending + 1)}
+                            className="w-6 h-6 rounded flex items-center justify-center border border-gold/30 bg-gold/5 text-gold/70 hover:border-gold/70 hover:bg-gold/15 hover:text-gold transition-all duration-150 cursor-pointer text-sm font-bold leading-none select-none"
+                          >+</button>
+                        </div>
 
-                    {/* Confirm button */}
-                    {pending > 0 && (
-                      <button
-                        onClick={() => submitDonation(resource)}
-                        disabled={isSubmitting}
-                        className="w-full text-xs font-medium py-1 px-2 rounded border border-gold/40 bg-gold/10 text-gold hover:bg-gold/20 hover:border-gold/60 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-150 cursor-pointer"
-                      >
-                        {isSubmitting ? '…' : `+${pendingPts} pts`}
-                      </button>
+                        {/* Confirm button */}
+                        {pending > 0 && (
+                          <button
+                            onClick={() => submitDonation(resource)}
+                            disabled={isSubmitting}
+                            className="w-full text-xs font-medium py-1 px-2 rounded border border-gold/40 bg-gold/10 text-gold hover:bg-gold/20 hover:border-gold/60 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-150 cursor-pointer"
+                          >
+                            {isSubmitting ? '…' : `+${pendingPts} pts`}
+                          </button>
+                        )}
+                      </>
                     )}
-                  </div>
                 )
               })}
             </div>
@@ -414,7 +427,7 @@ export default function NinjaPage() {
                     <span className="text-xs text-ink-faint">
                       {new Date(d.createdAt).toLocaleDateString('fr-FR', { day: '2-digit', month: '2-digit', year: '2-digit' })}
                     </span>
-                    <button
+                    {canWrite && <button
                       onClick={() => deleteDonation(d.id)}
                       className="opacity-0 group-hover:opacity-100 transition-opacity text-red-500 hover:text-red-400 cursor-pointer"
                       title="Supprimer ce don"
@@ -422,7 +435,7 @@ export default function NinjaPage() {
                       <svg viewBox="0 0 24 24" className="w-3.5 h-3.5" fill="none" stroke="currentColor" strokeWidth="2">
                         <path strokeLinecap="round" strokeLinejoin="round" d="M14.74 9l-.346 9m-4.788 0L9.26 9m9.968-3.21c.342.052.682.107 1.022.166m-1.022-.165L18.16 19.673a2.25 2.25 0 01-2.244 2.077H8.084a2.25 2.25 0 01-2.244-2.077L4.772 5.79m14.456 0a48.108 48.108 0 00-3.478-.397m-12 .562c.34-.059.68-.114 1.022-.165m0 0a48.11 48.11 0 013.478-.397m7.5 0v-.916c0-1.18-.91-2.164-2.09-2.201a51.964 51.964 0 00-3.32 0c-1.18.037-2.09 1.022-2.09 2.201v.916m7.5 0a48.667 48.667 0 00-7.5 0" />
                       </svg>
-                    </button>
+                    </button>}
                   </div>
                 </div>
               ))}

@@ -19,11 +19,12 @@ interface Ninja {
 interface NinjaCardProps {
   ninja: Ninja
   thresholds: GradeThresholds
+  canWrite?: boolean
   onDelete: (id: number) => void
   onTaxToggle: (ninjaId: number, currentPaid: boolean) => void
 }
 
-export default function NinjaCard({ ninja, thresholds, onDelete, onTaxToggle }: NinjaCardProps) {
+export default function NinjaCard({ ninja, thresholds, canWrite = true, onDelete, onTaxToggle }: NinjaCardProps) {
   const router = useRouter()
 
   const currentWeekStart = getWeekStart().getTime()
@@ -38,7 +39,7 @@ export default function NinjaCard({ ninja, thresholds, onDelete, onTaxToggle }: 
       onClick={() => router.push(`/ninja/${ninja.id}`)}
     >
       {/* Delete */}
-      <button
+      {canWrite && <button
         onClick={(e) => {
           e.stopPropagation()
           if (confirm(`Supprimer ${ninja.name} ?`)) onDelete(ninja.id)
@@ -50,7 +51,7 @@ export default function NinjaCard({ ninja, thresholds, onDelete, onTaxToggle }: 
         <svg viewBox="0 0 24 24" className="w-3.5 h-3.5" fill="none" stroke="currentColor" strokeWidth="2">
           <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
         </svg>
-      </button>
+      </button>}
 
       {/* Name */}
       <h3 className="font-semibold text-ink truncate pr-8 group-hover:text-gold transition-colors duration-200 mb-3">
@@ -100,12 +101,13 @@ export default function NinjaCard({ ninja, thresholds, onDelete, onTaxToggle }: 
         <button
           onClick={(e) => {
             e.stopPropagation()
-            onTaxToggle(ninja.id, taxPaid)
+            if (canWrite) onTaxToggle(ninja.id, taxPaid)
           }}
-          className={`transition-all duration-200 cursor-pointer ${
-            taxPaid ? 'badge-paid hover:bg-emerald-900' : 'badge-unpaid hover:bg-red-900'
+          disabled={!canWrite}
+          className={`transition-all duration-200 ${canWrite ? 'cursor-pointer' : 'cursor-default'} ${
+            taxPaid ? `badge-paid ${canWrite ? 'hover:bg-emerald-900' : ''}` : `badge-unpaid ${canWrite ? 'hover:bg-red-900' : ''}`
           }`}
-          title={taxPaid ? 'Cliquer pour marquer impayée' : 'Cliquer pour marquer payée'}
+          title={canWrite ? (taxPaid ? 'Cliquer pour marquer impayée' : 'Cliquer pour marquer payée') : undefined}
         >
           {taxPaid ? (
             <>

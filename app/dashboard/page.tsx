@@ -25,6 +25,7 @@ export default function DashboardPage() {
   const [loading, setLoading] = useState(true)
   const [showModal, setShowModal] = useState(false)
   const [search, setSearch] = useState('')
+  const [canWrite, setCanWrite] = useState(true)
 
   const currentWeek = formatWeekRange(getWeekStart())
 
@@ -32,9 +33,11 @@ export default function DashboardPage() {
     Promise.all([
       fetch('/api/ninjas').then(r => r.json()),
       fetch('/api/grades').then(r => r.json()),
-    ]).then(([ninjaData, gradeData]) => {
+      fetch('/api/auth/me').then(r => r.ok ? r.json() : null),
+    ]).then(([ninjaData, gradeData, meData]) => {
       setNinjas(Array.isArray(ninjaData) ? ninjaData : [])
       setThresholds(gradeData)
+      setCanWrite(meData?.role !== 'VISITEUR')
       setLoading(false)
     })
   }, [])
@@ -105,15 +108,17 @@ export default function DashboardPage() {
               </span>
             </div>
 
-            <button
-              onClick={() => setShowModal(true)}
-              className="btn-primary flex items-center gap-2"
-            >
-              <svg viewBox="0 0 24 24" className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth="2">
-                <path strokeLinecap="round" strokeLinejoin="round" d="M12 4.5v15m7.5-7.5h-15" />
-              </svg>
-              Ajouter
-            </button>
+            {canWrite && (
+              <button
+                onClick={() => setShowModal(true)}
+                className="btn-primary flex items-center gap-2"
+              >
+                <svg viewBox="0 0 24 24" className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth="2">
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M12 4.5v15m7.5-7.5h-15" />
+                </svg>
+                Ajouter
+              </button>
+            )}
           </div>
         </div>
 
@@ -162,6 +167,7 @@ export default function DashboardPage() {
                 key={ninja.id}
                 ninja={ninja}
                 thresholds={thresholds}
+                canWrite={canWrite}
                 onDelete={handleDelete}
                 onTaxToggle={handleTaxToggle}
               />

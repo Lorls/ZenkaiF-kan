@@ -23,8 +23,8 @@ export async function POST(req: NextRequest) {
   session.authenticated = true
   session.userId   = matched.id
   session.username = matched.username
-  session.isAdmin  = matched.isAdmin
+  session.role     = matched.role
   await session.save()
 
-  return NextResponse.json({ ok: true, isAdmin: matched.isAdmin })
+  return NextResponse.json({ ok: true, role: matched.role })
 }

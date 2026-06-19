@@ -11,7 +11,7 @@ export async function GET() {
 }
 
 export async function POST(req: NextRequest) {
-  const user = await guard()
+  const user = await guard('write')
   if (!user) return unauthorized()
 
   const { name } = await req.json()

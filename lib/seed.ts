@@ -11,7 +11,9 @@ export async function ensureAdminExists() {
   const existing = await db.user.findUnique({ where: { username } })
   if (!existing) {
     await db.user.create({
-      data: { username, passwordHash: await bcrypt.hash(password, 10), isAdmin: true },
+      data: { username, passwordHash: await bcrypt.hash(password, 10), role: 'ADMIN' },
     })
+  } else if (existing.role !== 'ADMIN') {
+    await db.user.update({ where: { username }, data: { role: 'ADMIN' } })
   }
 }

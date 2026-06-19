@@ -13,15 +13,20 @@ async function init() {
 export interface AuthUser {
   userId: number
   username: string
-  isAdmin: boolean
+  role: string
 }
 
-export async function guard(requireAdmin = false): Promise<AuthUser | null> {
+// guard()         → any authenticated user (VISITEUR, MEMBRE, ADMIN) — for reads
+// guard('write')  → MEMBRE or ADMIN — for mutations accessible aux membres
+// guard(true)     → ADMIN only
+export async function guard(level: true | 'write' | false = false): Promise<AuthUser | null> {
   await init()
   const s = await getSession()
   if (!s.authenticated || !s.userId) return null
-  if (requireAdmin && !s.isAdmin) return null
-  return { userId: s.userId, username: s.username!, isAdmin: !!s.isAdmin }
+  const role = s.role ?? 'MEMBRE'
+  if (level === true  && role !== 'ADMIN')    return null
+  if (level === 'write' && role === 'VISITEUR') return null
+  return { userId: s.userId, username: s.username!, role }
 }
 
 export function unauthorized(admin = false) {
