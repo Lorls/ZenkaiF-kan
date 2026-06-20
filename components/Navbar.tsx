@@ -3,7 +3,7 @@
 import Link from 'next/link'
 import { usePathname, useRouter } from 'next/navigation'
 import { useState, useEffect } from 'react'
-import { can, Permission } from '@/lib/permissions'
+import { can, Permission, ROLE_LABELS, Role } from '@/lib/permissions'
 
 interface Me { username: string; role: string }
 
@@ -183,7 +183,7 @@ function NavItems({
             <div className="flex flex-col min-w-0">
               <span className="text-sm text-ink font-medium truncate">{me.username}</span>
               <span className={`text-[10px] font-mono truncate ${me.role === 'GERANT' ? 'text-gold' : 'text-ink-muted'}`}>
-                {me.role.replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase())}
+                {ROLE_LABELS[me.role as Role] ?? me.role}
               </span>
             </div>
           </div>

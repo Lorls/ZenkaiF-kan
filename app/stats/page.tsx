@@ -36,7 +36,7 @@ export default function StatsPage() {
               {[...Array(4)].map((_, i) => <div key={i} className="h-24 bg-bg-card rounded" />)}
             </div>
             <div className="h-20 bg-bg-card rounded" />
-            <div className="grid lg:grid-cols-2 gap-4">
+            <div className="grid lg:grid-cols-2 gap-4 items-start">
               <div className="h-48 bg-bg-card rounded" />
               <div className="h-48 bg-bg-card rounded" />
             </div>
@@ -107,7 +107,7 @@ export default function StatsPage() {
             </div>
           </div>
 
-          <div className="grid lg:grid-cols-2 gap-4">
+          <div className="grid lg:grid-cols-2 gap-4 items-start">
             {/* Top donateurs */}
             <div className="card p-5">
               <h2 className="text-sm font-semibold text-ink mb-4">Top donateurs</h2>

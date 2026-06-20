@@ -344,6 +344,12 @@ export default function NinjaPage() {
               )}
             </div>
 
+            {taxGrade === null && (
+              <p className="text-xs text-ink-faint italic">
+                Sélectionne un grade pour simuler la dette fiscale.
+              </p>
+            )}
+
             {weeklyTaxRyos > 0 && (
               <>
                 {/* Compteurs */}
