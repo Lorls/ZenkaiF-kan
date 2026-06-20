@@ -409,19 +409,6 @@ export default function NinjaPage() {
                   </div>
                 </div>
 
-                {/* Exonération semaine prochaine */}
-                <div className={`rounded-lg p-3 border flex items-center justify-between gap-2 ${nextWeekExoRyos > 0 ? 'bg-gold/5 border-gold/20' : 'bg-bg-elevated/50 border-border-subtle'}`}>
-                  <div className="min-w-0">
-                    <p className="text-xs text-ink-muted mb-0.5">Exonération semaine prochaine</p>
-                    <p className="text-[10px] text-ink-faint truncate">
-                      {nextWeekPaid ? 'Semaine pré-payée' : nextWeekExoRyos > 0 ? `${Math.round((nextWeekExoRyos / weeklyTaxRyos) * 100)} % du tarif` : 'Aucune'}
-                    </p>
-                  </div>
-                  <p className={`font-mono text-xl font-bold shrink-0 ${nextWeekExoRyos > 0 ? 'text-gold' : 'text-ink-faint'}`}>
-                    {nextWeekExoRyos > 0 ? `${nextWeekExoRyos.toLocaleString('fr-FR')} ¥` : '—'}
-                  </p>
-                </div>
-
                 {/* Semaines exonérées à venir */}
                 {exoneratedWeeks.length > 0 && (
                   <div>
@@ -439,16 +426,6 @@ export default function NinjaPage() {
                         </div>
                       ))}
                     </div>
-                  </div>
-                )}
-
-                {/* Solde en cours */}
-                {ninja.exonerations > 0 && (
-                  <div className="rounded-lg bg-gold/5 border border-gold/20 p-3 flex items-center justify-between">
-                    <p className="text-xs text-gold/80">Solde d&apos;exonération accumulé</p>
-                    <p className="font-mono text-sm font-semibold text-gold">
-                      {Math.round(ninja.exonerations).toLocaleString('fr-FR')} ¥
-                    </p>
                   </div>
                 )}
 
