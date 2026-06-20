@@ -156,10 +156,10 @@ function NavItems({
                       key={n.href}
                       href={n.href}
                       onClick={onNavigate}
-                      className={`flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors duration-200 ${
+                      className={`flex items-center gap-3 pr-3 py-2.5 rounded-lg text-sm font-medium transition-all duration-200 border-l-2 pl-[10px] ${
                         pathname.startsWith(n.href)
-                          ? 'bg-gold/10 text-gold'
-                          : 'text-ink-muted hover:text-ink hover:bg-bg-elevated'
+                          ? 'border-gold bg-gold/10 text-gold'
+                          : 'border-transparent text-ink-muted hover:text-ink hover:bg-bg-elevated'
                       }`}
                     >
                       <span className={pathname.startsWith(n.href) ? 'text-gold' : 'text-ink-muted'}>{n.icon}</span>

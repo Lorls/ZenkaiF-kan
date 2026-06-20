@@ -30,16 +30,20 @@ export default function LoginPage() {
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-bg-base px-4">
-      <div className="w-full max-w-sm">
+    <div className="min-h-screen flex items-center justify-center bg-bg-base px-4 relative overflow-hidden">
+      {/* Ambient glow */}
+      <div className="absolute inset-0 pointer-events-none" style={{ background: 'radial-gradient(ellipse 70% 50% at 50% 45%, rgba(245,158,11,0.06) 0%, transparent 70%)' }} />
+      <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-96 h-96 rounded-full pointer-events-none" style={{ background: 'radial-gradient(circle, rgba(245,158,11,0.04) 0%, transparent 70%)', filter: 'blur(40px)' }} />
+
+      <div className="w-full max-w-sm relative">
         <div className="text-center mb-8">
-          <div className="inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-bg-card border border-border mb-4 shadow-glow">
-            <svg viewBox="0 0 24 24" className="w-8 h-8 text-gold" fill="none" stroke="currentColor" strokeWidth="1.5">
+          <div className="inline-flex items-center justify-center w-20 h-20 rounded-2xl bg-bg-card border border-border mb-5 shadow-glow">
+            <svg viewBox="0 0 24 24" className="w-10 h-10 text-gold" fill="none" stroke="currentColor" strokeWidth="1.5">
               <path strokeLinecap="round" strokeLinejoin="round" d="M12 3v1m0 16v1M4.22 4.22l.707.707m12.728 12.728.707.707M1 12h1m20 0h1M4.22 19.78l.707-.707M18.95 5.05l.707-.707M12 6a6 6 0 100 12 6 6 0 000-12z" />
             </svg>
           </div>
-          <h1 className="text-2xl font-bold text-ink tracking-tight">Koeki</h1>
-          <p className="text-ink-muted text-sm mt-1">Section Économique · Sunagakure</p>
+          <h1 className="text-3xl font-bold text-ink tracking-tight">Koeki</h1>
+          <p className="text-ink-muted text-sm mt-1.5">Section Économique · Sunagakure</p>
         </div>
 
         <form onSubmit={handleSubmit} className="card p-6 space-y-4">
@@ -81,4 +85,5 @@ export default function LoginPage() {
       </div>
     </div>
   )
+
 }

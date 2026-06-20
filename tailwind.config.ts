@@ -16,8 +16,8 @@ const config: Config = {
           elevated: '#171929',
         },
         border: {
-          DEFAULT: '#1E2140',
-          subtle: '#161830',
+          DEFAULT: '#252847',
+          subtle: '#1A1D38',
         },
         gold: {
           DEFAULT: '#F59E0B',

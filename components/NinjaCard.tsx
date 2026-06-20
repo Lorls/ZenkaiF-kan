@@ -26,10 +26,15 @@ export default function NinjaCard({ ninja, thresholds, canWrite = true, onDelete
   const router = useRouter()
 
   const unpaidCount = ninja.taxes.filter(t => !t.paid).length
+  const accentClass = unpaidCount > 0
+    ? 'border-l-red-800/70'
+    : ninja.points > 0
+    ? 'border-l-gold/40'
+    : 'border-l-border'
 
   return (
     <div
-      className="card p-4 hover:border-gold/40 hover:shadow-glow-sm transition-all duration-200 cursor-pointer group relative"
+      className={`card p-4 hover:border-gold/40 hover:shadow-glow-sm transition-all duration-200 cursor-pointer group relative border-l-2 ${accentClass}`}
       onClick={() => router.push(`/ninja/${ninja.id}`)}
     >
       {/* Delete */}
