@@ -22,24 +22,21 @@ export async function POST(req: NextRequest) {
   const exonerationEarned = Number(amount) * exonerationPerUnit
 
   const newExonerations = ninja.exonerations + exonerationEarned
-  const weeksToExonerate = Math.floor(newExonerations)
-  const remainingExonerations = newExonerations - weeksToExonerate
+  const exoneresNextWeek = newExonerations >= 1
+  // Pas de stack : si le seuil est atteint on paie la semaine suivante et on repart à 0
+  const finalExonerations = exoneresNextWeek ? 0 : newExonerations
 
-  // Auto-pay next N weeks of taxes if enough exoneration accumulated
-  const nextWeekStart = getNextWeekStart()
-  const taxOps = Array.from({ length: weeksToExonerate }, (_, i) => {
-    const weekStart = new Date(nextWeekStart)
-    weekStart.setUTCDate(weekStart.getUTCDate() + i * 7)
-    return db.tax.upsert({
-      where: { ninjaId_weekStart: { ninjaId: Number(ninjaId), weekStart } },
+  const taxOps = exoneresNextWeek ? [
+    db.tax.upsert({
+      where: { ninjaId_weekStart: { ninjaId: Number(ninjaId), weekStart: getNextWeekStart() } },
       update: { paid: true },
-      create: { ninjaId: Number(ninjaId), weekStart, paid: true },
-    })
-  })
+      create: { ninjaId: Number(ninjaId), weekStart: getNextWeekStart(), paid: true },
+    }),
+  ] : []
 
   const [donation] = await db.$transaction([
     db.donation.create({ data: { ninjaId: Number(ninjaId), resource, amount: Number(amount), pointsEarned, exonerationEarned } }),
-    db.ninja.update({ where: { id: Number(ninjaId) }, data: { points: { increment: pointsEarned }, exonerations: remainingExonerations } }),
+    db.ninja.update({ where: { id: Number(ninjaId) }, data: { points: { increment: pointsEarned }, exonerations: finalExonerations } }),
     ...taxOps,
   ])
 
