@@ -4,7 +4,27 @@ import { db } from '@/lib/db'
 import { ensureAdminExists } from '@/lib/seed'
 import bcrypt from 'bcryptjs'
 
+const loginAttempts = new Map<string, { count: number; resetAt: number }>()
+const RATE_LIMIT = 10
+const WINDOW_MS = 60_000
+
+function isRateLimited(ip: string): boolean {
+  const now = Date.now()
+  const entry = loginAttempts.get(ip)
+  if (!entry || entry.resetAt <= now) {
+    loginAttempts.set(ip, { count: 1, resetAt: now + WINDOW_MS })
+    return false
+  }
+  entry.count++
+  return entry.count > RATE_LIMIT
+}
+
 export async function POST(req: NextRequest) {
+  const ip = req.headers.get('x-forwarded-for')?.split(',')[0].trim() ?? req.headers.get('x-real-ip') ?? '127.0.0.1'
+  if (isRateLimited(ip)) {
+    return NextResponse.json({ error: 'Trop de tentatives. Réessayez dans une minute.' }, { status: 429 })
+  }
+
   await ensureAdminExists()
   const { password } = await req.json()
 

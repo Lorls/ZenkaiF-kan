@@ -25,8 +25,12 @@ export async function PATCH(req: NextRequest, context: { params: Promise<{ id: s
 
   const body = await req.json()
   const data: Record<string, unknown> = {}
-  if (body.name   !== undefined) data.name   = body.name.trim()
-  if (body.points !== undefined) data.points = Number(body.points)
+  if (body.name !== undefined) data.name = body.name.trim()
+  if (body.points !== undefined) {
+    const pts = Number(body.points)
+    if (!Number.isFinite(pts) || pts < 0) return NextResponse.json({ error: 'Points invalides' }, { status: 400 })
+    data.points = pts
+  }
 
   const ninja = await db.ninja.update({ where: { id: Number(id) }, data })
 

@@ -10,6 +10,9 @@ export async function POST(req: NextRequest) {
 
   const { ninjaId, weekStart, paid } = await req.json()
   if (!ninjaId || !weekStart) return NextResponse.json({ error: 'Données manquantes' }, { status: 400 })
+  const ninjaIdNum = Number(ninjaId)
+  if (!Number.isInteger(ninjaIdNum) || ninjaIdNum <= 0) return NextResponse.json({ error: 'Ninja invalide' }, { status: 400 })
+  if (isNaN(new Date(weekStart).getTime())) return NextResponse.json({ error: 'Semaine invalide' }, { status: 400 })
 
   const ninja = await db.ninja.findUnique({ where: { id: Number(ninjaId) } })
   if (!ninja) return NextResponse.json({ error: 'Ninja introuvable' }, { status: 404 })

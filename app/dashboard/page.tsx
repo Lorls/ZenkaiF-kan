@@ -5,6 +5,7 @@ import NinjaCard from '@/components/NinjaCard'
 import AddNinjaModal from '@/components/AddNinjaModal'
 import Navbar from '@/components/Navbar'
 import { GradeThresholds, DEFAULT_THRESHOLDS } from '@/lib/grades'
+import { can } from '@/lib/permissions'
 
 interface Tax {
   weekStart: string
@@ -35,7 +36,7 @@ export default function DashboardPage() {
     ]).then(([ninjaData, gradeData, meData]) => {
       setNinjas(Array.isArray(ninjaData) ? ninjaData : [])
       setThresholds(gradeData)
-      setCanWrite(meData?.role !== 'VISITEUR')
+      setCanWrite(can(meData?.role ?? '', 'ninjas:write'))
       setLoading(false)
     })
   }, [])
@@ -67,7 +68,7 @@ export default function DashboardPage() {
   return (
     <>
       <Navbar />
-      <div className="ml-64">
+      <div className="pt-14 lg:pt-0 lg:ml-64">
       <main className="max-w-7xl mx-auto px-4 sm:px-6 py-8">
         {/* Header */}
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-8">

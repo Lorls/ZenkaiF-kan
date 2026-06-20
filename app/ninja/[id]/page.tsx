@@ -7,6 +7,7 @@ import { RESOURCES } from '@/lib/resources'
 import { getWeekStart, formatWeekRange } from '@/lib/week'
 import { GRADES, GradeKey, GradeThresholds, DEFAULT_THRESHOLDS } from '@/lib/grades'
 import { getTaxRyosByGrade, getLateFeeForWeek, getTotalOwed, DEMOTION_THRESHOLD_WEEKS } from '@/lib/taxUtils'
+import { can } from '@/lib/permissions'
 
 interface Donation {
   id: number
@@ -57,6 +58,7 @@ export default function NinjaPage() {
   const [editingResource, setEditingResource] = useState<string | null>(null)
   const [editingValue, setEditingValue] = useState('')
   const [submittingResource, setSubmittingResource] = useState<string | null>(null)
+  const [markingAll, setMarkingAll] = useState(false)
 
   const currentWeekStart = getWeekStart()
 
@@ -73,7 +75,7 @@ export default function NinjaPage() {
     setNameInput(ninjaData.name)
     setPointsInput(String(Math.round(ninjaData.points)))
     setResourceValues(valuesData)
-    setCanWrite(meData?.role !== 'VISITEUR')
+    setCanWrite(can(meData?.role ?? '', 'ninjas:write'))
     setThresholds(gradesData)
     setLoading(false)
   }, [id, router])
@@ -135,8 +137,25 @@ export default function NinjaPage() {
   }
 
   async function deleteDonation(donationId: number) {
+    if (!confirm('Supprimer ce don ?')) return
     await fetch(`/api/donations/${donationId}`, { method: 'DELETE' })
     await load()
+  }
+
+  async function markAllPaid() {
+    if (!ninja || unpaidWeeks.length === 0) return
+    setMarkingAll(true)
+    await fetch('/api/taxes/bulk', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        ninjaId: id,
+        weekStarts: unpaidWeeks.map(w => w.toISOString()),
+        paid: true,
+      }),
+    })
+    await load()
+    setMarkingAll(false)
   }
 
   async function toggleTax(weekStart: Date, currentPaid: boolean) {
@@ -180,7 +199,7 @@ export default function NinjaPage() {
     return (
       <>
         <Navbar />
-      <div className="ml-64">
+      <div className="pt-14 lg:pt-0 lg:ml-64">
         <div className="max-w-4xl mx-auto px-4 py-8 animate-pulse space-y-4">
           <div className="h-8 bg-bg-card rounded w-48" />
           <div className="h-32 bg-bg-card rounded" />
@@ -195,7 +214,7 @@ export default function NinjaPage() {
   return (
     <>
       <Navbar />
-      <div className="ml-64">
+      <div className="pt-14 lg:pt-0 lg:ml-64">
       <main className="max-w-7xl mx-auto px-4 sm:px-6 py-8 space-y-6">
         {/* Back */}
         <button
@@ -414,7 +433,18 @@ export default function NinjaPage() {
                 {/* Liste des semaines impayées */}
                 {unpaidWeeks.length > 0 && (
                   <div>
-                    <p className="text-xs text-ink-muted mb-2">Semaines en retard</p>
+                    <div className="flex items-center justify-between mb-2">
+                      <p className="text-xs text-ink-muted">Semaines en retard</p>
+                      {canWrite && unpaidWeeks.length > 1 && (
+                        <button
+                          onClick={markAllPaid}
+                          disabled={markingAll}
+                          className="text-[10px] font-medium text-emerald-400 hover:text-emerald-300 disabled:opacity-50 transition-colors cursor-pointer"
+                        >
+                          {markingAll ? '…' : `Tout marquer payé (${unpaidWeeks.length})`}
+                        </button>
+                      )}
+                    </div>
                     <div className="space-y-1 max-h-48 overflow-y-auto pr-1">
                       {unpaidWeeks.map((ws) => {
                         const lateFee = getLateFeeForWeek(ws)

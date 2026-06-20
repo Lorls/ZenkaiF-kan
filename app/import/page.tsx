@@ -189,7 +189,7 @@ export default function ImportPage() {
   return (
     <>
       <Navbar />
-      <div className="ml-64">
+      <div className="pt-14 lg:pt-0 lg:ml-64">
       <main className="max-w-7xl mx-auto px-4 sm:px-6 py-8 space-y-6">
         <div>
           <h1 className="text-2xl font-bold text-ink">Import Google Sheets</h1>

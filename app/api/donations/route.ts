@@ -10,6 +10,8 @@ export async function POST(req: NextRequest) {
 
   const { ninjaId, resource, amount } = await req.json()
   if (!ninjaId || !resource || amount == null) return NextResponse.json({ error: 'Données manquantes' }, { status: 400 })
+  const amountNum = Number(amount)
+  if (!Number.isFinite(amountNum) || amountNum <= 0) return NextResponse.json({ error: 'Quantité invalide' }, { status: 400 })
 
   const ninja = await db.ninja.findUnique({ where: { id: Number(ninjaId) } })
   if (!ninja) return NextResponse.json({ error: 'Ninja introuvable' }, { status: 404 })
