@@ -7,6 +7,7 @@ import { GRADES } from '@/lib/grades'
 
 export default function SettingsPage() {
   const [values, setValues] = useState<Record<string, string>>({})
+  const [exonerations, setExonerations] = useState<Record<string, string>>({})
   const [grades, setGrades] = useState<Record<string, string>>({})
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
@@ -15,9 +16,11 @@ export default function SettingsPage() {
   useEffect(() => {
     Promise.all([
       fetch('/api/settings').then(r => r.json()),
+      fetch('/api/exoneration').then(r => r.json()),
       fetch('/api/grades').then(r => r.json()),
-    ]).then(([res, grd]) => {
+    ]).then(([res, exo, grd]) => {
       setValues(Object.fromEntries(Object.entries(res).map(([k, v]) => [k, String(v)])))
+      setExonerations(Object.fromEntries(Object.entries(exo).map(([k, v]) => [k, String(v)])))
       setGrades(Object.fromEntries(Object.entries(grd).map(([k, v]) => [k, String(v)])))
       setLoading(false)
     })
@@ -31,6 +34,11 @@ export default function SettingsPage() {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(Object.fromEntries(Object.entries(values).map(([k, v]) => [k, parseFloat(v) || 0]))),
+      }),
+      fetch('/api/exoneration', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(Object.fromEntries(Object.entries(exonerations).map(([k, v]) => [k, parseFloat(v) || 0]))),
       }),
       fetch('/api/grades', {
         method: 'POST',
@@ -123,24 +131,41 @@ export default function SettingsPage() {
               {[...Array(13)].map((_, i) => <div key={i} className="h-12 bg-bg-elevated rounded-lg animate-pulse" />)}
             </div>
           ) : (
-            <div className="space-y-3">
-              {RESOURCES.map(resource => (
-                <div key={resource} className="flex items-center gap-4">
-                  <label className="w-36 text-sm text-ink font-medium flex-shrink-0">{resource}</label>
-                  <div className="flex-1 flex items-center gap-2">
-                    <input
-                      type="number"
-                      value={values[resource] ?? '1'}
-                      onChange={e => setValues(prev => ({ ...prev, [resource]: e.target.value }))}
-                      className="input font-mono"
-                      min="0"
-                      step="any"
-                    />
-                    <span className="text-sm text-ink-muted whitespace-nowrap flex-shrink-0">pts / unité</span>
+            <>
+              {/* En-têtes colonnes */}
+              <div className="flex items-center gap-4 mb-2 pl-0">
+                <span className="w-36 flex-shrink-0" />
+                <span className="flex-1 text-xs text-ink-muted font-medium text-center">Points / unité</span>
+                <span className="flex-1 text-xs text-gold/80 font-medium text-center">Exonération / unité</span>
+              </div>
+              <div className="space-y-2">
+                {RESOURCES.map(resource => (
+                  <div key={resource} className="flex items-center gap-4">
+                    <label className="w-36 text-sm text-ink font-medium flex-shrink-0">{resource}</label>
+                    <div className="flex-1 flex items-center gap-2">
+                      <input
+                        type="number"
+                        value={values[resource] ?? '1'}
+                        onChange={e => setValues(prev => ({ ...prev, [resource]: e.target.value }))}
+                        className="input font-mono"
+                        min="0"
+                        step="any"
+                      />
+                    </div>
+                    <div className="flex-1 flex items-center gap-2">
+                      <input
+                        type="number"
+                        value={exonerations[resource] ?? '0'}
+                        onChange={e => setExonerations(prev => ({ ...prev, [resource]: e.target.value }))}
+                        className="input font-mono border-gold/20 focus:border-gold/50"
+                        min="0"
+                        step="any"
+                      />
+                    </div>
                   </div>
-                </div>
-              ))}
-            </div>
+                ))}
+              </div>
+            </>
           )}
           <SaveButton />
         </div>

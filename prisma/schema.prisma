@@ -44,23 +44,25 @@ model Log {
 }
 
 model Ninja {
-  id        Int        @id @default(autoincrement())
-  name      String
-  points    Float      @default(0)
-  createdAt DateTime   @default(now())
-  updatedAt DateTime   @updatedAt
-  donations Donation[]
-  taxes     Tax[]
+  id           Int        @id @default(autoincrement())
+  name         String
+  points       Float      @default(0)
+  exonerations Float      @default(0)
+  createdAt    DateTime   @default(now())
+  updatedAt    DateTime   @updatedAt
+  donations    Donation[]
+  taxes        Tax[]
 }
 
 model Donation {
-  id           Int      @id @default(autoincrement())
-  ninjaId      Int
-  ninja        Ninja    @relation(fields: [ninjaId], references: [id], onDelete: Cascade)
-  resource     String
-  amount       Float    @default(0)
-  pointsEarned Float    @default(0)
-  createdAt    DateTime @default(now())
+  id                Int      @id @default(autoincrement())
+  ninjaId           Int
+  ninja             Ninja    @relation(fields: [ninjaId], references: [id], onDelete: Cascade)
+  resource          String
+  amount            Float    @default(0)
+  pointsEarned      Float    @default(0)
+  exonerationEarned Float    @default(0)
+  createdAt         DateTime @default(now())
 }
 
 model Tax {
@@ -74,9 +76,10 @@ model Tax {
 }
 
 model ResourceValue {
-  resource      String   @id
-  pointsPerUnit Float    @default(1)
-  updatedAt     DateTime @updatedAt
+  resource           String   @id
+  pointsPerUnit      Float    @default(1)
+  exonerationPerUnit Float    @default(0)
+  updatedAt          DateTime @updatedAt
 }
 
 model Setting {

@@ -13,12 +13,18 @@ export async function DELETE(_: NextRequest, context: { params: Promise<{ id: st
 
   await logAction({
     user, action: 'delete', entity: 'donation', entityId: donation.id, entityName: donation.ninja.name,
-    diff: { before: { id: donation.id, ninjaId: donation.ninjaId, resource: donation.resource, amount: donation.amount, pointsEarned: donation.pointsEarned } },
+    diff: { before: { id: donation.id, ninjaId: donation.ninjaId, resource: donation.resource, amount: donation.amount, pointsEarned: donation.pointsEarned, exonerationEarned: donation.exonerationEarned } },
   })
 
   await db.$transaction([
     db.donation.delete({ where: { id: Number(paramId) } }),
-    db.ninja.update({ where: { id: donation.ninjaId }, data: { points: { decrement: donation.pointsEarned } } }),
+    db.ninja.update({
+      where: { id: donation.ninjaId },
+      data: {
+        points: { decrement: donation.pointsEarned },
+        exonerations: { decrement: donation.exonerationEarned },
+      },
+    }),
   ])
   return NextResponse.json({ ok: true })
 }
