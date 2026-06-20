@@ -14,6 +14,7 @@
 }
 
 body {
+  min-height: 100vh;
   background-color: #09090F;
   background-image: radial-gradient(ellipse 120% 40% at 50% 0%, #0e1020 0%, transparent 70%);
   color: #E2E8F0;
