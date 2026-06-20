@@ -199,9 +199,9 @@ export default function NinjaPage() {
   const nextWeekPaid = ninja
     ? ninja.taxes.some(t => t.paid && getWeekStart(new Date(t.weekStart)).getTime() === nextWeekStart.getTime())
     : false
-  const exoRyos = Math.round((ninja?.exonerations ?? 0) * weeklyTaxRyos)
+  const exoRyos = Math.round(ninja?.exonerations ?? 0)
   const nextWeekOwed = nextWeekPaid ? 0 : Math.max(0, weeklyTaxRyos - exoRyos)
-  const nextWeekExoRyos = nextWeekPaid ? weeklyTaxRyos : exoRyos
+  const nextWeekExoRyos = nextWeekPaid ? weeklyTaxRyos : Math.min(exoRyos, weeklyTaxRyos)
 
   if (loading) {
     return (
@@ -414,7 +414,7 @@ export default function NinjaPage() {
                   <div className="min-w-0">
                     <p className="text-xs text-ink-muted mb-0.5">Exonération semaine prochaine</p>
                     <p className="text-[10px] text-ink-faint truncate">
-                      {nextWeekPaid ? 'Semaine pré-payée' : nextWeekExoRyos > 0 ? `${Math.round((ninja.exonerations ?? 0) * 100)} % du tarif` : 'Aucune'}
+                      {nextWeekPaid ? 'Semaine pré-payée' : nextWeekExoRyos > 0 ? `${Math.round((nextWeekExoRyos / weeklyTaxRyos) * 100)} % du tarif` : 'Aucune'}
                     </p>
                   </div>
                   <p className={`font-mono text-xl font-bold shrink-0 ${nextWeekExoRyos > 0 ? 'text-gold' : 'text-ink-faint'}`}>
@@ -445,9 +445,9 @@ export default function NinjaPage() {
                 {/* Solde en cours */}
                 {ninja.exonerations > 0 && (
                   <div className="rounded-lg bg-gold/5 border border-gold/20 p-3 flex items-center justify-between">
-                    <p className="text-xs text-gold/80">Solde d&apos;exonération en cours</p>
+                    <p className="text-xs text-gold/80">Solde d&apos;exonération accumulé</p>
                     <p className="font-mono text-sm font-semibold text-gold">
-                      {ninja.exonerations.toFixed(2)} / 1.00
+                      {Math.round(ninja.exonerations).toLocaleString('fr-FR')} ¥
                     </p>
                   </div>
                 )}
