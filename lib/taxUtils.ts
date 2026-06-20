@@ -1,25 +1,11 @@
-import { GRADES, GradeThresholds } from './grades'
+import { GRADES, GradeKey } from './grades'
 
 const LATE_FEE_PER_MONTH = 2000
 export const DEMOTION_THRESHOLD_WEEKS = 104 // ~2 ans
 
-export function getCurrentGradeKey(points: number, thresholds: GradeThresholds): string | null {
-  for (let i = GRADES.length - 1; i >= 0; i--) {
-    if (points >= thresholds[GRADES[i].key]) return GRADES[i].key
-  }
-  return null
-}
-
-export function getWeeklyTaxRyos(points: number, thresholds: GradeThresholds): number {
-  const key = getCurrentGradeKey(points, thresholds)
-  if (!key) return 0
-  return GRADES.find(g => g.key === key)?.taxRyos ?? 0
-}
-
-export function getGradeLabel(points: number, thresholds: GradeThresholds): string {
-  const key = getCurrentGradeKey(points, thresholds)
-  if (!key) return 'Genin Simple'
-  return GRADES.find(g => g.key === key)?.label ?? 'Genin Simple'
+export function getTaxRyosByGrade(gradeKey: GradeKey | null): number {
+  if (!gradeKey) return 0
+  return GRADES.find(g => g.key === gradeKey)?.taxRyos ?? 0
 }
 
 export function getMonthsLate(weekStart: Date): number {
@@ -31,8 +17,8 @@ export function getLateFeeForWeek(weekStart: Date): number {
   return getMonthsLate(weekStart) * LATE_FEE_PER_MONTH
 }
 
-export function getTotalOwed(unpaidWeekStarts: Date[], points: number, thresholds: GradeThresholds): number {
-  const base = getWeeklyTaxRyos(points, thresholds)
+export function getTotalOwed(unpaidWeekStarts: Date[], gradeKey: GradeKey | null): number {
+  const base = getTaxRyosByGrade(gradeKey)
   if (base === 0) return 0
   return unpaidWeekStarts.reduce((sum, ws) => sum + base + getLateFeeForWeek(ws), 0)
 }

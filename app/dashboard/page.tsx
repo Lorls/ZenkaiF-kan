@@ -5,7 +5,6 @@ import NinjaCard from '@/components/NinjaCard'
 import AddNinjaModal from '@/components/AddNinjaModal'
 import Navbar from '@/components/Navbar'
 import { GradeThresholds, DEFAULT_THRESHOLDS } from '@/lib/grades'
-import { getWeeklyTaxRyos } from '@/lib/taxUtils'
 
 interface Tax {
   weekStart: string
@@ -51,7 +50,6 @@ export default function DashboardPage() {
     s.normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase()
 
   const unpaidCount = (n: Ninja) => n.taxes.filter(t => !t.paid).length
-  const isExempt = (n: Ninja) => getWeeklyTaxRyos(n.points, thresholds) === 0
 
   const filtered = ninjas
     .filter((n) => {
@@ -59,16 +57,12 @@ export default function DashboardPage() {
       return normalize(search).split(/\s+/).filter(Boolean).every((token) => name.includes(token))
     })
     .sort((a, b) => {
-      if (sortBy === 'unpaid') {
-        // Exempt always last
-        if (isExempt(a) !== isExempt(b)) return isExempt(a) ? 1 : -1
-        return unpaidCount(b) - unpaidCount(a)
-      }
+      if (sortBy === 'unpaid') return unpaidCount(b) - unpaidCount(a)
       return a.name.localeCompare(b.name)
     })
 
   const totalUnpaid = ninjas.reduce((s, n) => s + unpaidCount(n), 0)
-  const indebted = ninjas.filter(n => !isExempt(n) && unpaidCount(n) > 0).length
+  const indebted = ninjas.filter(n => unpaidCount(n) > 0).length
 
   return (
     <>

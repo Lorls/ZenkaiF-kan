@@ -5,8 +5,8 @@ import { useRouter, useParams } from 'next/navigation'
 import Navbar from '@/components/Navbar'
 import { RESOURCES } from '@/lib/resources'
 import { getWeekStart, formatWeekRange } from '@/lib/week'
-import { GradeThresholds, DEFAULT_THRESHOLDS } from '@/lib/grades'
-import { getGradeLabel, getWeeklyTaxRyos, getLateFeeForWeek, getTotalOwed, DEMOTION_THRESHOLD_WEEKS } from '@/lib/taxUtils'
+import { GRADES, GradeKey, GradeThresholds, DEFAULT_THRESHOLDS } from '@/lib/grades'
+import { getTaxRyosByGrade, getLateFeeForWeek, getTotalOwed, DEMOTION_THRESHOLD_WEEKS } from '@/lib/taxUtils'
 
 interface Donation {
   id: number
@@ -43,6 +43,7 @@ export default function NinjaPage() {
   const [loading, setLoading] = useState(true)
   const [canWrite, setCanWrite] = useState(true)
   const [thresholds, setThresholds] = useState<GradeThresholds>(DEFAULT_THRESHOLDS)
+  const [taxGrade, setTaxGrade] = useState<GradeKey | null>(null)
 
   // Edit states
   const [editName, setEditName] = useState(false)
@@ -166,9 +167,8 @@ export default function NinjaPage() {
     t => new Date(t.weekStart).getTime() === currentWeekStart.getTime()
   )
 
-  const weeklyTaxRyos = ninja ? getWeeklyTaxRyos(ninja.points, thresholds) : 0
-  const gradeLabel = ninja ? getGradeLabel(ninja.points, thresholds) : ''
-  const totalOwed = ninja ? getTotalOwed(unpaidWeeks, ninja.points, thresholds) : 0
+  const weeklyTaxRyos = getTaxRyosByGrade(taxGrade)
+  const totalOwed = getTotalOwed(unpaidWeeks, taxGrade)
 
   if (loading) {
     return (
@@ -279,18 +279,44 @@ export default function NinjaPage() {
           <div className="card p-5 space-y-4">
             <h2 className="text-base font-semibold text-ink">Taxes</h2>
 
-            {/* Grade + montant hebdo */}
-            <div className="flex items-center justify-between pb-4 border-b border-border-subtle">
-              <div>
-                <p className="text-xs text-ink-muted mb-0.5">Grade fiscal</p>
-                <p className="text-sm font-semibold text-ink">{gradeLabel}</p>
+            {/* Sélecteur de grade fiscal */}
+            <div className="pb-4 border-b border-border-subtle">
+              <p className="text-xs text-ink-muted mb-2">Grade fiscal (simulation)</p>
+              <div className="flex flex-wrap gap-1.5">
+                <button
+                  onClick={() => setTaxGrade(null)}
+                  className={`px-2.5 py-1 rounded-md border text-xs font-medium transition-all duration-150 cursor-pointer ${
+                    taxGrade === null
+                      ? 'border-ink-muted bg-bg-elevated text-ink'
+                      : 'border-border-subtle text-ink-faint hover:border-ink-muted hover:text-ink-muted'
+                  }`}
+                >
+                  Exonéré
+                </button>
+                {GRADES.map(g => {
+                  const eligible = ninja ? ninja.points >= thresholds[g.key] : false
+                  return (
+                    <button
+                      key={g.key}
+                      onClick={() => setTaxGrade(g.key)}
+                      className={`px-2.5 py-1 rounded-md border text-xs font-medium transition-all duration-150 cursor-pointer ${
+                        taxGrade === g.key
+                          ? 'border-gold bg-gold/10 text-gold'
+                          : 'border-border-subtle text-ink-faint hover:border-gold/40 hover:text-ink-muted'
+                      }`}
+                      title={eligible ? `Éligible (${g.taxRyos.toLocaleString('fr-FR')} ¥/sem.)` : `Non éligible (${g.taxRyos.toLocaleString('fr-FR')} ¥/sem.)`}
+                    >
+                      {g.label}
+                      {eligible && <span className="ml-1 text-emerald-400">✓</span>}
+                    </button>
+                  )
+                })}
               </div>
-              <div className="text-right">
-                <p className="text-xs text-ink-muted mb-0.5">Taxe / semaine</p>
-                <p className={`font-mono text-sm font-semibold ${weeklyTaxRyos === 0 ? 'text-ink-muted' : 'text-gold'}`}>
-                  {weeklyTaxRyos === 0 ? 'Exonéré' : `${weeklyTaxRyos.toLocaleString('fr-FR')} ¥`}
+              {taxGrade !== null && (
+                <p className="text-xs text-gold mt-2 font-mono">
+                  {weeklyTaxRyos.toLocaleString('fr-FR')} ¥ / semaine
                 </p>
-              </div>
+              )}
             </div>
 
             {weeklyTaxRyos > 0 && (

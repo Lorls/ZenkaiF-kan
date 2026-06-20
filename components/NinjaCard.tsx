@@ -2,7 +2,6 @@
 
 import { useRouter } from 'next/navigation'
 import { GRADES, GradeThresholds } from '@/lib/grades'
-import { getWeeklyTaxRyos } from '@/lib/taxUtils'
 
 interface Tax {
   weekStart: string
@@ -27,7 +26,6 @@ export default function NinjaCard({ ninja, thresholds, canWrite = true, onDelete
   const router = useRouter()
 
   const unpaidCount = ninja.taxes.filter(t => !t.paid).length
-  const isExempt = getWeeklyTaxRyos(ninja.points, thresholds) === 0
 
   return (
     <div
@@ -94,11 +92,7 @@ export default function NinjaCard({ ninja, thresholds, canWrite = true, onDelete
 
       {/* Tax badge */}
       <div className="mt-3" onClick={(e) => e.stopPropagation()}>
-        {isExempt ? (
-          <span className="inline-flex items-center gap-1 text-xs font-medium px-2 py-1 rounded-full border border-border text-ink-faint bg-bg-elevated/40">
-            Exonéré
-          </span>
-        ) : unpaidCount === 0 ? (
+        {unpaidCount === 0 ? (
           <span className="badge-paid">
             <svg viewBox="0 0 24 24" className="w-3 h-3" fill="none" stroke="currentColor" strokeWidth="2.5">
               <path strokeLinecap="round" strokeLinejoin="round" d="M4.5 12.75l6 6 9-13.5" />
