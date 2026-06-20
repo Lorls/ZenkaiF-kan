@@ -7,10 +7,10 @@ export function getTaxRyosByGrade(gradeKey: GradeKey | null): number {
   return GRADES.find(g => g.key === gradeKey)?.taxRyos ?? 0
 }
 
-// 1 jour IRL = 1 an HRP → 2 000 ¥ de pénalité par jour IRL de retard
+// 2 000 ¥ par jour IRL de retard. 7 jours de grâce : toute la semaine (dim→sam) pour payer.
 export function getLateFeeForWeek(weekStart: Date): number {
-  const days = Math.floor((Date.now() - weekStart.getTime()) / (1000 * 60 * 60 * 24))
-  return Math.max(0, days) * 2000
+  const daysLate = Math.floor((Date.now() - weekStart.getTime()) / (1000 * 60 * 60 * 24)) - 7
+  return Math.max(0, daysLate) * 2000
 }
 
 export function getTotalOwed(unpaidWeekStarts: Date[], gradeKey: GradeKey | null): number {

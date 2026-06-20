@@ -4,7 +4,7 @@ import { useEffect, useState, useCallback } from 'react'
 import { useRouter, useParams } from 'next/navigation'
 import Navbar from '@/components/Navbar'
 import { RESOURCES } from '@/lib/resources'
-import { getWeekStart, formatWeekRange } from '@/lib/week'
+import { getWeekStart, getNextWeekStart, formatWeekRange } from '@/lib/week'
 import { GRADES, GradeKey, GradeThresholds, DEFAULT_THRESHOLDS } from '@/lib/grades'
 import { getTaxRyosByGrade, getLateFeeForWeek, getTotalOwed, DEMOTION_THRESHOLD_WEEKS } from '@/lib/taxUtils'
 import { can } from '@/lib/permissions'
@@ -61,7 +61,7 @@ export default function NinjaPage() {
   const [markingAll, setMarkingAll] = useState(false)
 
   const currentWeekStart = getWeekStart()
-  const nextWeekStart = new Date(currentWeekStart.getTime() + 7 * 24 * 60 * 60 * 1000)
+  const nextWeekStart = getNextWeekStart()
 
   const load = useCallback(async () => {
     const [ninjaRes, valuesRes, meRes, gradesRes] = await Promise.all([
@@ -339,7 +339,9 @@ export default function NinjaPage() {
                 })}
               </div>
               {taxGrade !== null && (() => {
-                const nextWeekPaid = exoneratedWeeks.some(w => w.getTime() === nextWeekStart.getTime())
+                const nextWeekPaid = (ninja.taxes ?? []).some(t =>
+                  t.paid && getWeekStart(new Date(t.weekStart)).getTime() === nextWeekStart.getTime()
+                )
                 const exoRyos = Math.round((ninja.exonerations ?? 0) * weeklyTaxRyos)
                 const nextWeekOwed = nextWeekPaid ? 0 : Math.max(0, weeklyTaxRyos - exoRyos)
                 return (
