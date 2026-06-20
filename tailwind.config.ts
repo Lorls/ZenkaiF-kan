@@ -11,19 +11,19 @@ const config: Config = {
     extend: {
       colors: {
         bg: {
-          base: '#0A0B14',
-          card: '#10121E',
-          elevated: '#171929',
+          base: '#09090F',
+          card: '#0E0F1A',
+          elevated: '#161826',
         },
         border: {
-          DEFAULT: '#252847',
-          subtle: '#1A1D38',
+          DEFAULT: '#1F2238',
+          subtle: '#161930',
         },
         gold: {
-          DEFAULT: '#F59E0B',
-          dark: '#D97706',
-          light: '#FCD34D',
-          muted: '#78450A',
+          DEFAULT: '#E8A020',
+          dark: '#C8850A',
+          light: '#F5C842',
+          muted: '#6B3D0A',
         },
         ink: {
           DEFAULT: '#E2E8F0',
@@ -36,8 +36,8 @@ const config: Config = {
         mono: ['var(--font-fira-code)', 'monospace'],
       },
       boxShadow: {
-        glow: '0 0 20px rgba(245, 158, 11, 0.15)',
-        'glow-sm': '0 0 10px rgba(245, 158, 11, 0.1)',
+        glow: '0 0 20px rgba(232, 160, 32, 0.15)',
+        'glow-sm': '0 0 10px rgba(232, 160, 32, 0.1)',
       },
     },
   },
