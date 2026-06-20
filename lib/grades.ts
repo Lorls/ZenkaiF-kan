@@ -1,8 +1,8 @@
 export const GRADES = [
-  { key: 'GC',     label: 'GC',    default: 25 },
-  { key: 'Chunin', label: 'C',     default: 50 },
-  { key: 'Konin',  label: 'K',     default: 500 },
-  { key: 'TKJ',    label: 'TKJ',   default: 1000 },
+  { key: 'GC',     label: 'GC',    default: 25,   taxRyos: 10000 },
+  { key: 'Chunin', label: 'C',     default: 50,   taxRyos: 20000 },
+  { key: 'Konin',  label: 'K',     default: 500,  taxRyos: 40000 },
+  { key: 'TKJ',    label: 'TKJ',   default: 1000, taxRyos: 45000 },
 ] as const
 
 export type GradeKey = (typeof GRADES)[number]['key']

@@ -4,8 +4,8 @@ import { useEffect, useState } from 'react'
 import NinjaCard from '@/components/NinjaCard'
 import AddNinjaModal from '@/components/AddNinjaModal'
 import Navbar from '@/components/Navbar'
-import { getWeekStart, formatWeekRange } from '@/lib/week'
 import { GradeThresholds, DEFAULT_THRESHOLDS } from '@/lib/grades'
+import { getWeeklyTaxRyos } from '@/lib/taxUtils'
 
 interface Tax {
   weekStart: string
@@ -26,8 +26,7 @@ export default function DashboardPage() {
   const [showModal, setShowModal] = useState(false)
   const [search, setSearch] = useState('')
   const [canWrite, setCanWrite] = useState(true)
-
-  const currentWeek = formatWeekRange(getWeekStart())
+  const [sortBy, setSortBy] = useState<'name' | 'unpaid'>('name')
 
   useEffect(() => {
     Promise.all([
@@ -48,40 +47,28 @@ export default function DashboardPage() {
     )
   }
 
-  async function handleTaxToggle(ninjaId: number, currentPaid: boolean) {
-    const weekStart = getWeekStart()
-    await fetch('/api/taxes', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ ninjaId, weekStart: weekStart.toISOString(), paid: !currentPaid }),
-    })
-    setNinjas((prev) =>
-      prev.map((n) => {
-        if (n.id !== ninjaId) return n
-        const ws = weekStart.getTime()
-        const exists = n.taxes.some((t) => new Date(t.weekStart).getTime() === ws)
-        const taxes = exists
-          ? n.taxes.map((t) =>
-              new Date(t.weekStart).getTime() === ws ? { ...t, paid: !currentPaid } : t
-            )
-          : [...n.taxes, { weekStart: weekStart.toISOString(), paid: !currentPaid }]
-        return { ...n, taxes }
-      })
-    )
-  }
-
   const normalize = (s: string) =>
     s.normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase()
 
-  const filtered = ninjas.filter((n) => {
-    const name = normalize(n.name)
-    return normalize(search).split(/\s+/).filter(Boolean).every((token) => name.includes(token))
-  })
+  const unpaidCount = (n: Ninja) => n.taxes.filter(t => !t.paid).length
+  const isExempt = (n: Ninja) => getWeeklyTaxRyos(n.points, thresholds) === 0
 
-  const currentWeekStart = getWeekStart().getTime()
-  const paidCount = ninjas.filter((n) =>
-    n.taxes.some((t) => new Date(t.weekStart).getTime() === currentWeekStart && t.paid)
-  ).length
+  const filtered = ninjas
+    .filter((n) => {
+      const name = normalize(n.name)
+      return normalize(search).split(/\s+/).filter(Boolean).every((token) => name.includes(token))
+    })
+    .sort((a, b) => {
+      if (sortBy === 'unpaid') {
+        // Exempt always last
+        if (isExempt(a) !== isExempt(b)) return isExempt(a) ? 1 : -1
+        return unpaidCount(b) - unpaidCount(a)
+      }
+      return a.name.localeCompare(b.name)
+    })
+
+  const totalUnpaid = ninjas.reduce((s, n) => s + unpaidCount(n), 0)
+  const indebted = ninjas.filter(n => !isExempt(n) && unpaidCount(n) > 0).length
 
   return (
     <>
@@ -93,19 +80,33 @@ export default function DashboardPage() {
           <div>
             <h1 className="text-2xl font-bold text-ink">Ninjas</h1>
             <p className="text-ink-muted text-sm mt-0.5">
-              Semaine actuelle : {currentWeek}
+              <span className="font-mono text-ink font-semibold">{ninjas.length}</span> ninjas ·{' '}
+              {indebted > 0 ? (
+                <span>
+                  <span className="font-mono text-red-400 font-semibold">{indebted}</span> en retard ·{' '}
+                  <span className="font-mono text-red-400 font-semibold">{totalUnpaid}</span> sem. impayées total
+                </span>
+              ) : (
+                <span className="text-emerald-400">Tous à jour</span>
+              )}
             </p>
           </div>
 
           <div className="flex items-center gap-3">
-            <div className="flex items-center gap-4 text-sm text-ink-muted mr-2">
-              <span>
-                <span className="font-mono text-ink font-semibold">{ninjas.length}</span> ninjas
-              </span>
-              <span>
-                <span className="font-mono text-emerald-400 font-semibold">{paidCount}</span>
-                /{ninjas.length} taxes payées
-              </span>
+            {/* Tri */}
+            <div className="flex items-center rounded-lg border border-border overflow-hidden text-xs">
+              <button
+                onClick={() => setSortBy('name')}
+                className={`px-3 py-1.5 transition-colors ${sortBy === 'name' ? 'bg-bg-elevated text-ink' : 'text-ink-muted hover:text-ink'}`}
+              >
+                Nom
+              </button>
+              <button
+                onClick={() => setSortBy('unpaid')}
+                className={`px-3 py-1.5 transition-colors ${sortBy === 'unpaid' ? 'bg-bg-elevated text-ink' : 'text-ink-muted hover:text-ink'}`}
+              >
+                Retard
+              </button>
             </div>
 
             {canWrite && (
@@ -169,7 +170,6 @@ export default function DashboardPage() {
                 thresholds={thresholds}
                 canWrite={canWrite}
                 onDelete={handleDelete}
-                onTaxToggle={handleTaxToggle}
               />
             ))}
           </div>

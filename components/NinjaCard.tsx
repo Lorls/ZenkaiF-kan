@@ -1,8 +1,8 @@
 'use client'
 
 import { useRouter } from 'next/navigation'
-import { getWeekStart } from '@/lib/week'
 import { GRADES, GradeThresholds } from '@/lib/grades'
+import { getWeeklyTaxRyos } from '@/lib/taxUtils'
 
 interface Tax {
   weekStart: string
@@ -21,17 +21,13 @@ interface NinjaCardProps {
   thresholds: GradeThresholds
   canWrite?: boolean
   onDelete: (id: number) => void
-  onTaxToggle: (ninjaId: number, currentPaid: boolean) => void
 }
 
-export default function NinjaCard({ ninja, thresholds, canWrite = true, onDelete, onTaxToggle }: NinjaCardProps) {
+export default function NinjaCard({ ninja, thresholds, canWrite = true, onDelete }: NinjaCardProps) {
   const router = useRouter()
 
-  const currentWeekStart = getWeekStart().getTime()
-  const currentTax = ninja.taxes.find(
-    (t) => new Date(t.weekStart).getTime() === currentWeekStart
-  )
-  const taxPaid = currentTax?.paid === true
+  const unpaidCount = ninja.taxes.filter(t => !t.paid).length
+  const isExempt = getWeeklyTaxRyos(ninja.points, thresholds) === 0
 
   return (
     <div
@@ -97,34 +93,26 @@ export default function NinjaCard({ ninja, thresholds, canWrite = true, onDelete
       </div>
 
       {/* Tax badge */}
-      <div className="mt-3">
-        <button
-          onClick={(e) => {
-            e.stopPropagation()
-            if (canWrite) onTaxToggle(ninja.id, taxPaid)
-          }}
-          disabled={!canWrite}
-          className={`transition-all duration-200 ${canWrite ? 'cursor-pointer' : 'cursor-default'} ${
-            taxPaid ? `badge-paid ${canWrite ? 'hover:bg-emerald-900' : ''}` : `badge-unpaid ${canWrite ? 'hover:bg-red-900' : ''}`
-          }`}
-          title={canWrite ? (taxPaid ? 'Cliquer pour marquer impayée' : 'Cliquer pour marquer payée') : undefined}
-        >
-          {taxPaid ? (
-            <>
-              <svg viewBox="0 0 24 24" className="w-3 h-3" fill="none" stroke="currentColor" strokeWidth="2.5">
-                <path strokeLinecap="round" strokeLinejoin="round" d="M4.5 12.75l6 6 9-13.5" />
-              </svg>
-              Taxe payée
-            </>
-          ) : (
-            <>
-              <svg viewBox="0 0 24 24" className="w-3 h-3" fill="none" stroke="currentColor" strokeWidth="2.5">
-                <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
-              </svg>
-              Taxe impayée
-            </>
-          )}
-        </button>
+      <div className="mt-3" onClick={(e) => e.stopPropagation()}>
+        {isExempt ? (
+          <span className="inline-flex items-center gap-1 text-xs font-medium px-2 py-1 rounded-full border border-border text-ink-faint bg-bg-elevated/40">
+            Exonéré
+          </span>
+        ) : unpaidCount === 0 ? (
+          <span className="badge-paid">
+            <svg viewBox="0 0 24 24" className="w-3 h-3" fill="none" stroke="currentColor" strokeWidth="2.5">
+              <path strokeLinecap="round" strokeLinejoin="round" d="M4.5 12.75l6 6 9-13.5" />
+            </svg>
+            À jour
+          </span>
+        ) : (
+          <span className="badge-unpaid">
+            <svg viewBox="0 0 24 24" className="w-3 h-3" fill="none" stroke="currentColor" strokeWidth="2.5">
+              <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+            </svg>
+            {unpaidCount} sem. impayée{unpaidCount > 1 ? 's' : ''}
+          </span>
+        )}
       </div>
     </div>
   )

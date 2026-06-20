@@ -4,7 +4,9 @@ import { useEffect, useState, useCallback } from 'react'
 import { useRouter, useParams } from 'next/navigation'
 import Navbar from '@/components/Navbar'
 import { RESOURCES } from '@/lib/resources'
-import { getWeekStart, getNextWeekStart, weekLabel, formatWeekRange } from '@/lib/week'
+import { getWeekStart, formatWeekRange } from '@/lib/week'
+import { GradeThresholds, DEFAULT_THRESHOLDS } from '@/lib/grades'
+import { getGradeLabel, getWeeklyTaxRyos, getLateFeeForWeek, getTotalOwed, DEMOTION_THRESHOLD_WEEKS } from '@/lib/taxUtils'
 
 interface Donation {
   id: number
@@ -40,6 +42,7 @@ export default function NinjaPage() {
   const [resourceValues, setResourceValues] = useState<ResourceValues>({})
   const [loading, setLoading] = useState(true)
   const [canWrite, setCanWrite] = useState(true)
+  const [thresholds, setThresholds] = useState<GradeThresholds>(DEFAULT_THRESHOLDS)
 
   // Edit states
   const [editName, setEditName] = useState(false)
@@ -54,21 +57,22 @@ export default function NinjaPage() {
   const [submittingResource, setSubmittingResource] = useState<string | null>(null)
 
   const currentWeekStart = getWeekStart()
-  const nextWeekStart = getNextWeekStart()
 
   const load = useCallback(async () => {
-    const [ninjaRes, valuesRes, meRes] = await Promise.all([
+    const [ninjaRes, valuesRes, meRes, gradesRes] = await Promise.all([
       fetch(`/api/ninjas/${id}`),
       fetch('/api/settings'),
       fetch('/api/auth/me'),
+      fetch('/api/grades'),
     ])
     if (!ninjaRes.ok) { router.push('/dashboard'); return }
-    const [ninjaData, valuesData, meData] = await Promise.all([ninjaRes.json(), valuesRes.json(), meRes.ok ? meRes.json() : null])
+    const [ninjaData, valuesData, meData, gradesData] = await Promise.all([ninjaRes.json(), valuesRes.json(), meRes.ok ? meRes.json() : null, gradesRes.json()])
     setNinja(ninjaData)
     setNameInput(ninjaData.name)
     setPointsInput(String(Math.round(ninjaData.points)))
     setResourceValues(valuesData)
     setCanWrite(meData?.role !== 'VISITEUR')
+    setThresholds(gradesData)
     setLoading(false)
   }, [id, router])
 
@@ -153,17 +157,18 @@ export default function NinjaPage() {
   }, {} as Record<string, { amount: number; points: number }>)
 
   // Tax helpers
-  function getTaxForWeek(weekStart: Date): Tax | undefined {
-    return ninja?.taxes.find((t) => new Date(t.weekStart).getTime() === weekStart.getTime())
-  }
+  const unpaidWeeks = (ninja?.taxes ?? [])
+    .filter(t => !t.paid)
+    .map(t => new Date(t.weekStart))
+    .sort((a, b) => a.getTime() - b.getTime())
 
-  // Past 8 weeks
-  const taxWeeks = Array.from({ length: 10 }, (_, i) => {
-    const d = new Date(currentWeekStart)
-    d.setUTCDate(d.getUTCDate() - i * 7)
-    return d
-  }).reverse()
-  taxWeeks.push(nextWeekStart)
+  const currentWeekTax = ninja?.taxes.find(
+    t => new Date(t.weekStart).getTime() === currentWeekStart.getTime()
+  )
+
+  const weeklyTaxRyos = ninja ? getWeeklyTaxRyos(ninja.points, thresholds) : 0
+  const gradeLabel = ninja ? getGradeLabel(ninja.points, thresholds) : ''
+  const totalOwed = ninja ? getTotalOwed(unpaidWeeks, ninja.points, thresholds) : 0
 
   if (loading) {
     return (
@@ -271,54 +276,113 @@ export default function NinjaPage() {
         <div className="grid lg:grid-cols-[40%_1fr] gap-6 items-start">
 
           {/* Taxes */}
-          <div className="card p-5">
-            <h2 className="text-base font-semibold text-ink mb-3">Taxes hebdomadaires</h2>
-            <div className="flex items-center gap-3 mb-2.5">
-              <span className="flex items-center gap-1.5 text-xs text-gold"><span className="w-2 h-2 rounded-full bg-gold/60 inline-block" />Semaine courante</span>
-              <span className="flex items-center gap-1.5 text-xs text-blue-400"><span className="w-2 h-2 rounded-full bg-blue-500/60 inline-block" />Semaine suivante</span>
-            </div>
-            <div className="grid grid-cols-2 gap-1.5">
-              {taxWeeks.map((weekStart) => {
-                const tax = getTaxForWeek(weekStart)
-                const paid = tax?.paid === true
-                const isNext = weekStart.getTime() === nextWeekStart.getTime()
-                const isCurrent = weekStart.getTime() === currentWeekStart.getTime()
+          <div className="card p-5 space-y-4">
+            <h2 className="text-base font-semibold text-ink">Taxes</h2>
 
-                return (
-                  <div
-                    key={weekStart.toISOString()}
-                    className={`flex items-center justify-between py-2 px-2.5 rounded-lg border ${
-                      isCurrent ? 'border-gold/30 bg-gold/5' : isNext ? 'border-blue-900/50 bg-blue-950/20' : 'border-border-subtle bg-bg-elevated/30'
+            {/* Grade + montant hebdo */}
+            <div className="flex items-center justify-between pb-4 border-b border-border-subtle">
+              <div>
+                <p className="text-xs text-ink-muted mb-0.5">Grade fiscal</p>
+                <p className="text-sm font-semibold text-ink">{gradeLabel}</p>
+              </div>
+              <div className="text-right">
+                <p className="text-xs text-ink-muted mb-0.5">Taxe / semaine</p>
+                <p className={`font-mono text-sm font-semibold ${weeklyTaxRyos === 0 ? 'text-ink-muted' : 'text-gold'}`}>
+                  {weeklyTaxRyos === 0 ? 'Exonéré' : `${weeklyTaxRyos.toLocaleString('fr-FR')} ¥`}
+                </p>
+              </div>
+            </div>
+
+            {weeklyTaxRyos > 0 && (
+              <>
+                {/* Compteurs */}
+                <div className="grid grid-cols-2 gap-3">
+                  <div className="rounded-lg bg-bg-elevated/50 p-3 border border-border-subtle">
+                    <p className="text-xs text-ink-muted mb-1">Semaines impayées</p>
+                    <p className={`font-mono text-2xl font-bold ${unpaidWeeks.length > 0 ? 'text-red-400' : 'text-emerald-400'}`}>
+                      {unpaidWeeks.length}
+                    </p>
+                  </div>
+                  <div className="rounded-lg bg-bg-elevated/50 p-3 border border-border-subtle">
+                    <p className="text-xs text-ink-muted mb-1">Total dû</p>
+                    <p className={`font-mono text-2xl font-bold ${totalOwed > 0 ? 'text-red-400' : 'text-emerald-400'}`}>
+                      {totalOwed > 0 ? `${totalOwed.toLocaleString('fr-FR')} ¥` : '—'}
+                    </p>
+                  </div>
+                </div>
+
+                {/* Alerte rétrogradation */}
+                {unpaidWeeks.length >= DEMOTION_THRESHOLD_WEEKS && (
+                  <div className="rounded-lg bg-red-950/30 border border-red-800/50 p-3">
+                    <p className="text-xs text-red-400 font-semibold">Rétrogradation requise</p>
+                    <p className="text-xs text-red-400/70 mt-0.5">Plus de 2 ans de taxes impayées</p>
+                  </div>
+                )}
+
+                {/* Semaine courante */}
+                <div>
+                  <p className="text-xs text-ink-muted mb-2">Semaine actuelle — {formatWeekRange(currentWeekStart)}</p>
+                  <button
+                    onClick={() => canWrite && toggleTax(currentWeekStart, currentWeekTax?.paid === true)}
+                    disabled={!canWrite}
+                    className={`flex items-center gap-1.5 text-xs font-medium px-3 py-1.5 rounded-full border transition-all duration-200 ${canWrite ? 'cursor-pointer' : 'cursor-default'} ${
+                      currentWeekTax?.paid === true
+                        ? `badge-paid ${canWrite ? 'hover:bg-emerald-900' : ''}`
+                        : `badge-unpaid ${canWrite ? 'hover:bg-red-900' : ''}`
                     }`}
                   >
-                    <span className={`text-xs font-medium truncate mr-1.5 ${
-                      isCurrent ? 'text-gold' : isNext ? 'text-blue-400' : 'text-ink-muted'
-                    }`}>
-                      {formatWeekRange(weekStart)}
-                    </span>
-                    <button
-                      onClick={() => canWrite && toggleTax(weekStart, paid)}
-                      disabled={!canWrite}
-                      className={`flex items-center gap-1 text-xs font-medium px-2 py-1 rounded-full border transition-all duration-200 shrink-0 ${canWrite ? 'cursor-pointer' : 'cursor-default'} ${
-                        paid
-                          ? `badge-paid ${canWrite ? 'hover:bg-emerald-900' : ''}`
-                          : `badge-unpaid ${canWrite ? 'hover:bg-red-900' : ''}`
-                      }`}
-                    >
-                      {paid ? (
+                    {currentWeekTax?.paid === true ? (
+                      <>
                         <svg viewBox="0 0 24 24" className="w-3 h-3" fill="none" stroke="currentColor" strokeWidth="2.5">
                           <path strokeLinecap="round" strokeLinejoin="round" d="M4.5 12.75l6 6 9-13.5" />
                         </svg>
-                      ) : (
+                        Payée
+                      </>
+                    ) : (
+                      <>
                         <svg viewBox="0 0 24 24" className="w-3 h-3" fill="none" stroke="currentColor" strokeWidth="2.5">
                           <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
                         </svg>
-                      )}
-                    </button>
+                        Impayée
+                      </>
+                    )}
+                  </button>
+                </div>
+
+                {/* Liste des semaines impayées */}
+                {unpaidWeeks.length > 0 && (
+                  <div>
+                    <p className="text-xs text-ink-muted mb-2">Semaines en retard</p>
+                    <div className="space-y-1 max-h-48 overflow-y-auto pr-1">
+                      {unpaidWeeks.map((ws) => {
+                        const lateFee = getLateFeeForWeek(ws)
+                        const isCurrent = ws.getTime() === currentWeekStart.getTime()
+                        return (
+                          <div key={ws.toISOString()} className="flex items-center justify-between py-1.5 px-2.5 rounded-lg bg-red-950/20 border border-red-900/30">
+                            <div className="flex items-center gap-2">
+                              <span className={`text-xs font-medium ${isCurrent ? 'text-gold' : 'text-ink-muted'}`}>
+                                {formatWeekRange(ws)}
+                              </span>
+                              {lateFee > 0 && (
+                                <span className="text-[10px] text-red-400/70 font-mono">+{lateFee.toLocaleString('fr-FR')} ¥</span>
+                              )}
+                            </div>
+                            {canWrite && (
+                              <button
+                                onClick={() => toggleTax(ws, false)}
+                                className="text-[10px] font-medium text-emerald-400 hover:text-emerald-300 transition-colors cursor-pointer"
+                              >
+                                Marquer payée
+                              </button>
+                            )}
+                          </div>
+                        )
+                      })}
+                    </div>
                   </div>
-                )
-              })}
-            </div>
+                )}
+              </>
+            )}
           </div>
 
           {/* Resources — inline donation */}
