@@ -164,6 +164,11 @@ export default function NinjaPage() {
     .map(t => new Date(t.weekStart))
     .sort((a, b) => a.getTime() - b.getTime())
 
+  const exoneratedWeeks = (ninja?.taxes ?? [])
+    .filter(t => t.paid && new Date(t.weekStart).getTime() > currentWeekStart.getTime())
+    .map(t => new Date(t.weekStart))
+    .sort((a, b) => a.getTime() - b.getTime())
+
   const currentWeekTax = ninja?.taxes.find(
     t => new Date(t.weekStart).getTime() === currentWeekStart.getTime()
   )
@@ -338,10 +343,30 @@ export default function NinjaPage() {
                   </div>
                 </div>
 
-                {/* Solde d'exonération */}
+                {/* Semaines exonérées à venir */}
+                {exoneratedWeeks.length > 0 && (
+                  <div>
+                    <p className="text-xs text-ink-muted mb-2">
+                      Semaines exonérées à venir{' '}
+                      <span className="text-gold font-mono">({exoneratedWeeks.length})</span>
+                    </p>
+                    <div className="space-y-1">
+                      {exoneratedWeeks.map(ws => (
+                        <div key={ws.toISOString()} className="flex items-center gap-2 py-1.5 px-2.5 rounded-lg bg-gold/5 border border-gold/20">
+                          <svg viewBox="0 0 24 24" className="w-3 h-3 text-gold flex-shrink-0" fill="none" stroke="currentColor" strokeWidth="2.5">
+                            <path strokeLinecap="round" strokeLinejoin="round" d="M4.5 12.75l6 6 9-13.5" />
+                          </svg>
+                          <span className="text-xs text-gold">{formatWeekRange(ws)}</span>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {/* Solde en cours */}
                 {ninja.exonerations > 0 && (
                   <div className="rounded-lg bg-gold/5 border border-gold/20 p-3 flex items-center justify-between">
-                    <p className="text-xs text-gold/80">Solde d&apos;exonération</p>
+                    <p className="text-xs text-gold/80">Solde d&apos;exonération en cours</p>
                     <p className="font-mono text-sm font-semibold text-gold">
                       {ninja.exonerations.toFixed(2)} / 1.00
                     </p>
