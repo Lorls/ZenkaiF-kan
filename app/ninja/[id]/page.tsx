@@ -61,6 +61,7 @@ export default function NinjaPage() {
   const [markingAll, setMarkingAll] = useState(false)
 
   const currentWeekStart = getWeekStart()
+  const nextWeekStart = new Date(currentWeekStart.getTime() + 7 * 24 * 60 * 60 * 1000)
 
   const load = useCallback(async () => {
     const [ninjaRes, valuesRes, meRes, gradesRes] = await Promise.all([
@@ -337,11 +338,49 @@ export default function NinjaPage() {
                   )
                 })}
               </div>
-              {taxGrade !== null && (
-                <p className="text-xs text-gold mt-2 font-mono">
-                  {weeklyTaxRyos.toLocaleString('fr-FR')} ¥ / semaine
-                </p>
-              )}
+              {taxGrade !== null && (() => {
+                const nextWeekPaid = exoneratedWeeks.some(w => w.getTime() === nextWeekStart.getTime())
+                const exoRyos = Math.round((ninja.exonerations ?? 0) * weeklyTaxRyos)
+                const nextWeekOwed = nextWeekPaid ? 0 : Math.max(0, weeklyTaxRyos - exoRyos)
+                return (
+                  <div className="mt-2 space-y-2">
+                    <p className="text-xs text-gold font-mono">
+                      {weeklyTaxRyos.toLocaleString('fr-FR')} ¥ / semaine
+                    </p>
+                    <div className="rounded-lg bg-bg-elevated/50 p-2.5 border border-border-subtle space-y-1.5">
+                      <p className="text-[10px] uppercase tracking-wider text-ink-faint font-medium">Semaine prochaine</p>
+                      {nextWeekPaid ? (
+                        <div className="flex items-center gap-1.5 text-emerald-400">
+                          <svg viewBox="0 0 24 24" className="w-3 h-3" fill="none" stroke="currentColor" strokeWidth="2.5">
+                            <path strokeLinecap="round" strokeLinejoin="round" d="M4.5 12.75l6 6 9-13.5" />
+                          </svg>
+                          <span className="text-xs font-medium">Déjà payée — 0 ¥ dû</span>
+                        </div>
+                      ) : exoRyos > 0 ? (
+                        <>
+                          <div className="flex justify-between">
+                            <span className="text-xs text-ink-muted">Base</span>
+                            <span className="text-xs font-mono text-ink">{weeklyTaxRyos.toLocaleString('fr-FR')} ¥</span>
+                          </div>
+                          <div className="flex justify-between">
+                            <span className="text-xs text-ink-muted">Exonération</span>
+                            <span className="text-xs font-mono text-emerald-400">−{exoRyos.toLocaleString('fr-FR')} ¥</span>
+                          </div>
+                          <div className="flex justify-between border-t border-border-subtle pt-1.5">
+                            <span className="text-xs font-semibold text-ink">À payer</span>
+                            <span className="text-xs font-mono font-bold text-gold">{nextWeekOwed.toLocaleString('fr-FR')} ¥</span>
+                          </div>
+                        </>
+                      ) : (
+                        <div className="flex justify-between">
+                          <span className="text-xs text-ink-muted">À payer</span>
+                          <span className="text-xs font-mono font-bold text-gold">{weeklyTaxRyos.toLocaleString('fr-FR')} ¥</span>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                )
+              })()}
             </div>
 
             {taxGrade === null && (
