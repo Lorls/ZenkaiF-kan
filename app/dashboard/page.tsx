@@ -6,6 +6,7 @@ import AddNinjaModal from '@/components/AddNinjaModal'
 import Navbar from '@/components/Navbar'
 import { GradeThresholds, DEFAULT_THRESHOLDS } from '@/lib/grades'
 import { can } from '@/lib/permissions'
+import { getWeekStart } from '@/lib/week'
 
 interface Tax {
   weekStart: string
@@ -50,7 +51,16 @@ export default function DashboardPage() {
   const normalize = (s: string) =>
     s.normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase()
 
-  const unpaidCount = (n: Ninja) => n.taxes.filter(t => !t.paid).length
+  const currentWeekStart = getWeekStart()
+  const unpaidCount = (n: Ninja) => {
+    const currentPaid = n.taxes.some(
+      t => new Date(t.weekStart).getTime() === currentWeekStart.getTime() && t.paid
+    )
+    const oldUnpaid = n.taxes.filter(
+      t => !t.paid && new Date(t.weekStart).getTime() !== currentWeekStart.getTime()
+    ).length
+    return oldUnpaid + (currentPaid ? 0 : 1)
+  }
 
   const filtered = ninjas
     .filter((n) => {
