@@ -3,14 +3,9 @@ import type { NextRequest } from 'next/server'
 import { unsealData } from 'iron-session'
 import type { SessionData } from '@/lib/auth'
 
-// Routes publiques — pas besoin de session
 const PUBLIC = ['/login', '/api/auth']
 
-// Routes réservées aux GÉRANT
-const GERANT_ONLY = ['/admin', '/settings', '/import', '/api/admin']
-
-// Routes réservées aux membres (pas aux visiteurs)
-const MEMBRE_ONLY = ['/rachat', '/api/rachat']
+const GERANT_ONLY = ['/admin', '/api/admin']
 
 export async function proxy(req: NextRequest) {
   const res = NextResponse.next()
@@ -37,23 +32,14 @@ export async function proxy(req: NextRequest) {
     return NextResponse.redirect(url)
   }
 
-  const role: string = session.role ?? 'VISITEUR'
+  const role: string = session.role ?? 'MEMBRE'
 
   if (GERANT_ONLY.some(p => pathname.startsWith(p)) && role !== 'GERANT') {
     if (pathname.startsWith('/api/')) {
       return NextResponse.json({ error: 'Accès refusé' }, { status: 403 })
     }
     const url = req.nextUrl.clone()
-    url.pathname = '/dashboard'
-    return NextResponse.redirect(url)
-  }
-
-  if (MEMBRE_ONLY.some(p => pathname.startsWith(p)) && role === 'VISITEUR') {
-    if (pathname.startsWith('/api/')) {
-      return NextResponse.json({ error: 'Accès refusé' }, { status: 403 })
-    }
-    const url = req.nextUrl.clone()
-    url.pathname = '/dashboard'
+    url.pathname = '/'
     return NextResponse.redirect(url)
   }
 

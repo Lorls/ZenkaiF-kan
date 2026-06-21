@@ -4,16 +4,12 @@ import { useState, useEffect } from 'react'
 import Navbar from '@/components/Navbar'
 import { ROLES, ROLE_LABELS, Role } from '@/lib/permissions'
 
-interface User { id: number; username: string; role: Role; createdAt: string; actionCount: number }
+interface User { id: number; username: string; role: Role; createdAt: string }
 interface NewUser extends User { password: string }
 
 const ROLE_STYLES: Record<Role, string> = {
-  GERANT:            'bg-gold/10 text-gold border-gold/20',
-  RESPONSABLE_SHOMU: 'bg-purple-950/40 text-purple-400 border-purple-900/40',
-  RESPONSABLE_KOBO:  'bg-teal-950/40 text-teal-400 border-teal-900/40',
-  MEMBRE_SHOMU:      'bg-blue-950/40 text-blue-400 border-blue-900/40',
-  MEMBRE_KOBO:       'bg-emerald-950/40 text-emerald-400 border-emerald-900/40',
-  VISITEUR:          'bg-bg-elevated text-ink-muted border-border',
+  GERANT: 'bg-gold/10 text-gold border-gold/20',
+  MEMBRE: 'bg-bg-elevated text-ink-muted border-border',
 }
 
 export default function AdminPage() {
@@ -21,15 +17,10 @@ export default function AdminPage() {
   const [me, setMe] = useState<{ userId: number } | null>(null)
   const [loading, setLoading] = useState(true)
   const [newUsername, setNewUsername] = useState('')
-  const [newRole, setNewRole] = useState<Role>('MEMBRE_SHOMU')
+  const [newRole, setNewRole] = useState<Role>('MEMBRE')
   const [creating, setCreating] = useState(false)
   const [created, setCreated] = useState<NewUser | null>(null)
   const [resetResult, setResetResult] = useState<{ id: number; password: string } | null>(null)
-  const [wiping, setWiping] = useState(false)
-  const [resettingWeek, setResettingWeek] = useState(false)
-  const [weekResetCount, setWeekResetCount] = useState<number | null>(null)
-  const [applyingExo, setApplyingExo] = useState(false)
-  const [exoAppliedCount, setExoAppliedCount] = useState<number | null>(null)
   const [error, setError] = useState('')
   const [roleError, setRoleError] = useState('')
 
@@ -70,31 +61,6 @@ export default function AdminPage() {
     }
   }
 
-  async function handleApplyExonerations() {
-    if (!confirm('Appliquer les exonérations rétroactivement ?\n\nTous les ninjas avec 25 000 ¥+ d\'exonérations verront leur semaine cible marquée payée et 25 000 ¥ déduits.')) return
-    setApplyingExo(true)
-    const res = await fetch('/api/taxes/apply-exonerations', { method: 'POST' })
-    const data = await res.json()
-    if (res.ok) setExoAppliedCount(data.applied)
-    setApplyingExo(false)
-  }
-
-  async function handleResetWeek() {
-    if (!confirm('Remettre à zéro les taxes de la semaine courante pour tous les ninjas ?\n\nTous les enregistrements "payé" de cette semaine seront marqués non payés.')) return
-    setResettingWeek(true)
-    const res = await fetch('/api/taxes/reset-week', { method: 'POST' })
-    const data = await res.json()
-    if (res.ok) setWeekResetCount(data.reset)
-    setResettingWeek(false)
-  }
-
-  async function handleWipe() {
-    if (!confirm('Supprimer TOUS les ninjas, dons, taxes et logs ?\n\nLes comptes et paramètres sont conservés.\nCette action est irréversible.')) return
-    setWiping(true)
-    await fetch('/api/admin/reset', { method: 'POST' })
-    setWiping(false)
-  }
-
   async function handleReset(id: number) {
     const res = await fetch(`/api/admin/users/${id}`, { method: 'POST' })
     const data = await res.json()
@@ -122,7 +88,7 @@ export default function AdminPage() {
       <main className="max-w-3xl mx-auto px-4 sm:px-6 py-8 space-y-6">
         <div>
           <h1 className="text-2xl font-bold text-ink">Panel Admin</h1>
-          <p className="text-ink-muted text-sm mt-1">Gestion des comptes — chaque action est tracée sous l&apos;identité de son auteur.</p>
+          <p className="text-ink-muted text-sm mt-1">Gestion des comptes utilisateurs.</p>
         </div>
 
         {/* Create user */}
@@ -134,7 +100,7 @@ export default function AdminPage() {
             <select
               value={newRole}
               onChange={e => setNewRole(e.target.value as Role)}
-              className="input w-48"
+              className="input w-40"
             >
               {ROLES.map(r => (
                 <option key={r} value={r}>{ROLE_LABELS[r]}</option>
@@ -196,7 +162,6 @@ export default function AdminPage() {
                 <tr className="border-b border-border bg-bg-elevated/40">
                   <th className="text-left px-4 py-2.5 text-ink-muted font-medium">Identifiant</th>
                   <th className="text-left px-4 py-2.5 text-ink-muted font-medium">Rôle</th>
-                  <th className="text-right px-4 py-2.5 text-ink-muted font-medium">Actions</th>
                   <th className="text-left px-4 py-2.5 text-ink-muted font-medium">Créé le</th>
                   <th className="px-4 py-2.5" />
                 </tr>
@@ -224,7 +189,6 @@ export default function AdminPage() {
                         ))}
                       </select>
                     </td>
-                    <td className="px-4 py-3 text-right font-mono text-ink-muted text-xs">{u.actionCount}</td>
                     <td className="px-4 py-3 text-xs text-ink-muted">{new Date(u.createdAt).toLocaleDateString('fr-FR')}</td>
                     <td className="px-4 py-3">
                       <div className="flex items-center gap-1 justify-end">
@@ -239,66 +203,6 @@ export default function AdminPage() {
               </tbody>
             </table>
           )}
-        </div>
-
-        {/* Apply exonerations retroactively */}
-        <div className="card p-6 border-emerald-900/40">
-          <h2 className="text-base font-semibold text-emerald-400 mb-1">Appliquer les exonérations</h2>
-          <p className="text-ink-muted text-sm mb-4">
-            Paye automatiquement la semaine cible de tous les ninjas ayant 25 000 ¥ ou plus d&apos;exonérations accumulées. Utile pour rattraper les donations de la semaine dernière.
-          </p>
-          {exoAppliedCount !== null && (
-            <p className="text-emerald-400 text-sm mb-3">{exoAppliedCount} ninja{exoAppliedCount > 1 ? 's' : ''} exonéré{exoAppliedCount > 1 ? 's' : ''}.</p>
-          )}
-          <button
-            onClick={handleApplyExonerations}
-            disabled={applyingExo}
-            className="flex items-center gap-2 px-4 py-2 rounded-lg bg-emerald-950/40 border border-emerald-900/50 text-emerald-400 hover:bg-emerald-950 hover:text-emerald-300 transition-colors duration-200 text-sm font-medium cursor-pointer disabled:opacity-50"
-          >
-            <svg viewBox="0 0 24 24" className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth="1.5">
-              <path strokeLinecap="round" strokeLinejoin="round" d="M9 12.75L11.25 15 15 9.75M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-            </svg>
-            {applyingExo ? 'Application...' : 'Appliquer les exonérations'}
-          </button>
-        </div>
-
-        {/* Reset current week */}
-        <div className="card p-6 border-amber-900/40">
-          <h2 className="text-base font-semibold text-amber-400 mb-1">Réinitialiser la semaine courante</h2>
-          <p className="text-ink-muted text-sm mb-4">
-            Marque toutes les taxes de la semaine en cours comme non payées. Utile si des taxes ont été enregistrées par erreur en avance.
-          </p>
-          {weekResetCount !== null && (
-            <p className="text-emerald-400 text-sm mb-3">{weekResetCount} taxe{weekResetCount > 1 ? 's' : ''} réinitialisée{weekResetCount > 1 ? 's' : ''}.</p>
-          )}
-          <button
-            onClick={handleResetWeek}
-            disabled={resettingWeek}
-            className="flex items-center gap-2 px-4 py-2 rounded-lg bg-amber-950/40 border border-amber-900/50 text-amber-400 hover:bg-amber-950 hover:text-amber-300 transition-colors duration-200 text-sm font-medium cursor-pointer disabled:opacity-50"
-          >
-            <svg viewBox="0 0 24 24" className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth="1.5">
-              <path strokeLinecap="round" strokeLinejoin="round" d="M16.023 9.348h4.992v-.001M2.985 19.644v-4.992m0 0h4.992m-4.993 0l3.181 3.183a8.25 8.25 0 0013.803-3.7M4.031 9.865a8.25 8.25 0 0113.803-3.7l3.181 3.182m0-4.991v4.99" />
-            </svg>
-            {resettingWeek ? 'Réinitialisation...' : 'Réinitialiser les taxes de cette semaine'}
-          </button>
-        </div>
-
-        {/* Danger zone */}
-        <div className="card p-6 border-red-900/50">
-          <h2 className="text-base font-semibold text-red-400 mb-1">Zone dangereuse</h2>
-          <p className="text-ink-muted text-sm mb-4">
-            Supprime tous les ninjas, leurs dons, taxes et logs. Les comptes utilisateurs et les paramètres sont conservés.
-          </p>
-          <button
-            onClick={handleWipe}
-            disabled={wiping}
-            className="flex items-center gap-2 px-4 py-2 rounded-lg bg-red-950 border border-red-900 text-red-400 hover:bg-red-900 hover:text-red-300 transition-colors duration-200 text-sm font-medium cursor-pointer disabled:opacity-50"
-          >
-            <svg viewBox="0 0 24 24" className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth="1.5">
-              <path strokeLinecap="round" strokeLinejoin="round" d="M14.74 9l-.346 9m-4.788 0L9.26 9m9.968-3.21c.342.052.682.107 1.022.166m-1.022-.165L18.16 19.673a2.25 2.25 0 01-2.244 2.077H8.084a2.25 2.25 0 01-2.244-2.077L4.772 5.79m14.456 0a48.108 48.108 0 00-3.478-.397m-12 .562c.34-.059.68-.114 1.022-.165m0 0a48.11 48.11 0 013.478-.397m7.5 0v-.916c0-1.18-.91-2.164-2.09-2.201a51.964 51.964 0 00-3.32 0c-1.18.037-2.09 1.022-2.09 2.201v.916m7.5 0a48.667 48.667 0 00-7.5 0" />
-            </svg>
-            {wiping ? 'Suppression...' : 'Supprimer tous les ninjas et données'}
-          </button>
         </div>
       </main>
       </div>

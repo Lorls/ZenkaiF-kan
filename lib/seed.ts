@@ -9,11 +9,14 @@ async function migrateRoles() {
   migrated = true
   await db.user.updateMany({ where: { role: 'ADMIN' },  data: { role: 'GERANT' } })
   await db.user.updateMany({ where: { role: 'GÉRANT' }, data: { role: 'GERANT' } })
-  await db.user.updateMany({ where: { role: 'MEMBRE' }, data: { role: 'MEMBRE_SHOMU' } })
+  // Tout rôle inconnu autre que GERANT/MEMBRE → MEMBRE
+  await db.user.updateMany({
+    where: { role: { notIn: ['GERANT', 'MEMBRE'] } },
+    data: { role: 'MEMBRE' },
+  })
 }
 
 export async function ensureAdminExists() {
-  // Migration runs on every cold start (idempotent, cheap when already done)
   await migrateRoles()
 
   if (seeded) return
@@ -22,7 +25,6 @@ export async function ensureAdminExists() {
   const username = process.env.ADMIN_USERNAME || 'admin'
   const password = process.env.SITE_PASSWORD  || 'changeme'
 
-  // If no GERANT exists, promote the oldest account so the system stays accessible.
   const gerantCount = await db.user.count({ where: { role: 'GERANT' } })
   if (gerantCount === 0) {
     const oldest = await db.user.findFirst({ orderBy: { createdAt: 'asc' } })
