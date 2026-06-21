@@ -26,6 +26,8 @@ export default function AdminPage() {
   const [created, setCreated] = useState<NewUser | null>(null)
   const [resetResult, setResetResult] = useState<{ id: number; password: string } | null>(null)
   const [wiping, setWiping] = useState(false)
+  const [resettingWeek, setResettingWeek] = useState(false)
+  const [weekResetCount, setWeekResetCount] = useState<number | null>(null)
   const [error, setError] = useState('')
   const [roleError, setRoleError] = useState('')
 
@@ -64,6 +66,15 @@ export default function AdminPage() {
     } else {
       load()
     }
+  }
+
+  async function handleResetWeek() {
+    if (!confirm('Remettre à zéro les taxes de la semaine courante pour tous les ninjas ?\n\nTous les enregistrements "payé" de cette semaine seront marqués non payés.')) return
+    setResettingWeek(true)
+    const res = await fetch('/api/taxes/reset-week', { method: 'POST' })
+    const data = await res.json()
+    if (res.ok) setWeekResetCount(data.reset)
+    setResettingWeek(false)
   }
 
   async function handleWipe() {
@@ -217,6 +228,27 @@ export default function AdminPage() {
               </tbody>
             </table>
           )}
+        </div>
+
+        {/* Reset current week */}
+        <div className="card p-6 border-amber-900/40">
+          <h2 className="text-base font-semibold text-amber-400 mb-1">Réinitialiser la semaine courante</h2>
+          <p className="text-ink-muted text-sm mb-4">
+            Marque toutes les taxes de la semaine en cours comme non payées. Utile si des taxes ont été enregistrées par erreur en avance.
+          </p>
+          {weekResetCount !== null && (
+            <p className="text-emerald-400 text-sm mb-3">{weekResetCount} taxe{weekResetCount > 1 ? 's' : ''} réinitialisée{weekResetCount > 1 ? 's' : ''}.</p>
+          )}
+          <button
+            onClick={handleResetWeek}
+            disabled={resettingWeek}
+            className="flex items-center gap-2 px-4 py-2 rounded-lg bg-amber-950/40 border border-amber-900/50 text-amber-400 hover:bg-amber-950 hover:text-amber-300 transition-colors duration-200 text-sm font-medium cursor-pointer disabled:opacity-50"
+          >
+            <svg viewBox="0 0 24 24" className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth="1.5">
+              <path strokeLinecap="round" strokeLinejoin="round" d="M16.023 9.348h4.992v-.001M2.985 19.644v-4.992m0 0h4.992m-4.993 0l3.181 3.183a8.25 8.25 0 0013.803-3.7M4.031 9.865a8.25 8.25 0 0113.803-3.7l3.181 3.182m0-4.991v4.99" />
+            </svg>
+            {resettingWeek ? 'Réinitialisation...' : 'Réinitialiser les taxes de cette semaine'}
+          </button>
         </div>
 
         {/* Danger zone */}
