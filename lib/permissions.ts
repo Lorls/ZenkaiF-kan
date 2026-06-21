@@ -28,14 +28,15 @@ export type Permission =
   | 'kobo:read'
   | 'settings:write'
   | 'admin:manage'
+  | 'rapports:write'
 
 const ROLE_PERMISSIONS: Record<Role, Permission[]> = {
   VISITEUR: [],
-  MEMBRE_SHOMU:      ['ninjas:read', 'ninjas:write', 'rachat:read'],
-  MEMBRE_KOBO:       ['kobo:read'],
-  RESPONSABLE_SHOMU: ['ninjas:read', 'ninjas:write', 'rachat:read', 'rachat:write', 'logs:read'],
-  RESPONSABLE_KOBO:  ['kobo:read', 'logs:read'],
-  GERANT:            ['ninjas:read', 'ninjas:write', 'rachat:read', 'rachat:write', 'logs:read', 'logs:revert', 'kobo:read', 'settings:write', 'admin:manage'],
+  MEMBRE_SHOMU:      ['ninjas:read', 'ninjas:write', 'rachat:read', 'rapports:write'],
+  MEMBRE_KOBO:       ['kobo:read', 'rapports:write'],
+  RESPONSABLE_SHOMU: ['ninjas:read', 'ninjas:write', 'rachat:read', 'rachat:write', 'logs:read', 'rapports:write'],
+  RESPONSABLE_KOBO:  ['kobo:read', 'logs:read', 'rapports:write'],
+  GERANT:            ['ninjas:read', 'ninjas:write', 'rachat:read', 'rachat:write', 'logs:read', 'logs:revert', 'kobo:read', 'settings:write', 'admin:manage', 'rapports:write'],
 }
 
 export function can(role: string, permission: Permission): boolean {

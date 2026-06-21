@@ -9,14 +9,31 @@ datasource db {
 }
 
 model User {
-  id             Int      @id @default(autoincrement())
-  username       String   @unique
+  id             Int       @id @default(autoincrement())
+  username       String    @unique
   passwordHash   String
-  role           String   @default("MEMBRE")
-  sessionVersion Int      @default(0)
-  createdAt      DateTime @default(now())
-  logs           Log[]    @relation("Author")
-  reverts        Log[]    @relation("Reverter")
+  role           String    @default("MEMBRE")
+  sessionVersion Int       @default(0)
+  createdAt      DateTime  @default(now())
+  logs           Log[]     @relation("Author")
+  reverts        Log[]     @relation("Reverter")
+  rapports       Rapport[] @relation("RapportAuteur")
+  rapportsRevus  Rapport[] @relation("RapportRevieweur")
+}
+
+model Rapport {
+  id           Int       @id @default(autoincrement())
+  userId       Int
+  user         User      @relation("RapportAuteur", fields: [userId], references: [id], onDelete: Cascade)
+  type         String    // PARTICIPATION | ORGANISATION | RECRUTEMENT
+  weekStart    DateTime  // Vendredi de la semaine (ven→jeu), UTC midnight
+  description  String
+  status       String    @default("EN_ATTENTE") // EN_ATTENTE | APPROUVE | REJETE
+  reviewNote   String?
+  reviewedById Int?
+  reviewedBy   User?     @relation("RapportRevieweur", fields: [reviewedById], references: [id], onDelete: SetNull)
+  reviewedAt   DateTime?
+  createdAt    DateTime  @default(now())
 }
 
 model Log {

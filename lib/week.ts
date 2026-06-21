@@ -51,3 +51,29 @@ export function weekLabel(weekStart: Date | string): string {
   if (diff === -1) return 'Semaine dernière'
   return formatWeekRange(weekStart)
 }
+
+// Semaines Vendredi → Jeudi (pour les rapports d'investissement)
+export function getFridayWeekStart(date: Date = new Date()): Date {
+  const d = new Date(date)
+  const day = d.getUTCDay() // 0=dim 5=ven
+  const daysBack = (day + 2) % 7  // ven=0 sam=1 dim=2 lun=3 mar=4 mer=5 jeu=6
+  d.setUTCDate(d.getUTCDate() - daysBack)
+  d.setUTCHours(0, 0, 0, 0)
+  return d
+}
+
+export function formatFridayWeekRange(weekStart: Date | string): string {
+  const start = new Date(weekStart)
+  const end = new Date(start)
+  end.setUTCDate(end.getUTCDate() + 6) // jeudi
+  return `${start.toLocaleDateString('fr-FR', { day: '2-digit', month: '2-digit', timeZone: 'UTC' })} – ${end.toLocaleDateString('fr-FR', { day: '2-digit', month: '2-digit', year: 'numeric', timeZone: 'UTC' })}`
+}
+
+export function fridayWeekLabel(weekStart: Date | string): string {
+  const now = getFridayWeekStart()
+  const target = getFridayWeekStart(new Date(weekStart))
+  const diff = Math.round((target.getTime() - now.getTime()) / (7 * 24 * 60 * 60 * 1000))
+  if (diff === 0) return 'Cette semaine'
+  if (diff === -1) return 'Semaine dernière'
+  return formatFridayWeekRange(weekStart)
+}
