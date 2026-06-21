@@ -179,10 +179,15 @@ export default function NinjaPage() {
   }, {} as Record<string, { amount: number; points: number }>)
 
   // Tax helpers
-  const unpaidWeeks = (ninja?.taxes ?? [])
-    .filter(t => !t.paid)
-    .map(t => new Date(t.weekStart))
-    .sort((a, b) => a.getTime() - b.getTime())
+  const currentWeekIsPaid = (ninja?.taxes ?? []).some(
+    t => new Date(t.weekStart).getTime() === currentWeekStart.getTime() && t.paid
+  )
+  const unpaidWeeks = [
+    ...(ninja?.taxes ?? [])
+      .filter(t => !t.paid && new Date(t.weekStart).getTime() !== currentWeekStart.getTime())
+      .map(t => new Date(t.weekStart)),
+    ...(!currentWeekIsPaid ? [currentWeekStart] : []),
+  ].sort((a, b) => a.getTime() - b.getTime())
 
   const exoneratedWeeks = (ninja?.taxes ?? [])
     .filter(t => t.paid && new Date(t.weekStart).getTime() > currentWeekStart.getTime())
