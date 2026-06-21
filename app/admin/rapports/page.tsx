@@ -41,7 +41,7 @@ export default function AdminRapportsPage() {
 
   useEffect(() => { load() }, [load])
 
-  async function review(id: number, status: 'APPROUVE' | 'REJETE') {
+  async function review(id: number, status: 'APPROUVE' | 'REJETE' | 'EN_ATTENTE') {
     setProcessing(id)
     await fetch(`/api/rapports/${id}`, {
       method: 'PATCH',
@@ -125,11 +125,24 @@ export default function AdminRapportsPage() {
                   {r.description}
                 </p>
 
-                {/* Review note (if reviewed) */}
-                {r.reviewNote && (
-                  <p className="text-xs text-ink-muted italic">
-                    Note ({r.reviewedBy?.username}) : {r.reviewNote}
-                  </p>
+                {/* Info review (si traité) */}
+                {r.status !== 'EN_ATTENTE' && (
+                  <div className="flex items-center justify-between gap-3 pt-1 border-t border-border-subtle">
+                    <div className="text-xs text-ink-faint">
+                      {r.status === 'APPROUVE' ? 'Approuvé' : 'Rejeté'} par{' '}
+                      <span className="text-ink-muted font-medium">{r.reviewedBy?.username ?? '—'}</span>
+                      {r.reviewNote && (
+                        <span className="ml-2 italic">· {r.reviewNote}</span>
+                      )}
+                    </div>
+                    <button
+                      onClick={() => review(r.id, 'EN_ATTENTE')}
+                      disabled={processing === r.id}
+                      className="text-xs font-medium px-2.5 py-1 rounded-lg border border-border-subtle text-ink-muted hover:text-ink hover:border-border disabled:opacity-40 transition-colors cursor-pointer shrink-0"
+                    >
+                      {processing === r.id ? '…' : 'Annuler'}
+                    </button>
+                  </div>
                 )}
 
                 {/* Actions */}

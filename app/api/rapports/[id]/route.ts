@@ -10,21 +10,20 @@ export async function PATCH(req: NextRequest, context: { params: Promise<{ id: s
   const body = await req.json()
   const { status, reviewNote } = body
 
-  if (!['APPROUVE', 'REJETE'].includes(status)) {
+  if (!['APPROUVE', 'REJETE', 'EN_ATTENTE'].includes(status)) {
     return NextResponse.json({ error: 'Statut invalide' }, { status: 400 })
   }
 
   const rapport = await db.rapport.findUnique({ where: { id: Number(id) } })
   if (!rapport) return NextResponse.json({ error: 'Rapport introuvable' }, { status: 404 })
 
+  const isReset = status === 'EN_ATTENTE'
+
   const updated = await db.rapport.update({
     where: { id: Number(id) },
-    data: {
-      status,
-      reviewNote: reviewNote?.trim() || null,
-      reviewedById: user.userId,
-      reviewedAt: new Date(),
-    },
+    data: isReset
+      ? { status, reviewNote: null, reviewedById: null, reviewedAt: null }
+      : { status, reviewNote: reviewNote?.trim() || null, reviewedById: user.userId, reviewedAt: new Date() },
     include: { user: { select: { id: true, username: true } } },
   })
 
