@@ -9,10 +9,54 @@ datasource db {
 }
 
 model User {
-  id             Int      @id @default(autoincrement())
-  username       String   @unique
+  id             Int        @id @default(autoincrement())
+  username       String     @unique
   passwordHash   String
-  role           String   @default("MEMBRE")
-  sessionVersion Int      @default(0)
-  createdAt      DateTime @default(now())
+  role           String     @default("MEMBRE")
+  sessionVersion Int        @default(0)
+  createdAt      DateTime   @default(now())
+  activities     Activity[]
+  deposits       Deposit[]
+}
+
+model ActivityType {
+  id         Int        @id @default(autoincrement())
+  name       String
+  points     Int        @default(0)
+  active     Boolean    @default(true)
+  createdAt  DateTime   @default(now())
+  activities Activity[]
+}
+
+model Activity {
+  id             Int           @id @default(autoincrement())
+  userId         Int
+  user           User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  activityTypeId Int?
+  activityType   ActivityType? @relation(fields: [activityTypeId], references: [id], onDelete: SetNull)
+  activityName   String
+  points         Int           @default(0)
+  discordLink    String
+  status         String        @default("EN_ATTENTE")
+  weekStart      DateTime
+  reviewedById   Int?
+  reviewedAt     DateTime?
+  createdAt      DateTime      @default(now())
+}
+
+model Deposit {
+  id           Int      @id @default(autoincrement())
+  userId       Int
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  amount       Float
+  status       String   @default("EN_ATTENTE")
+  weekStart    DateTime
+  reviewedById Int?
+  reviewedAt   DateTime?
+  createdAt    DateTime @default(now())
+}
+
+model Setting {
+  key   String @id
+  value String
 }

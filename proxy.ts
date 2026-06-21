@@ -5,7 +5,11 @@ import type { SessionData } from '@/lib/auth'
 
 const PUBLIC = ['/login', '/api/auth']
 
-const GERANT_ONLY = ['/admin', '/api/admin']
+const GERANT_ONLY = [
+  '/admin', '/api/admin',
+  '/activites', '/validation', '/classement', '/salaires',
+  '/api/activity-types', '/api/settings', '/api/gestion',
+]
 
 export async function proxy(req: NextRequest) {
   const res = NextResponse.next()

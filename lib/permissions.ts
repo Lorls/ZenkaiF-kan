@@ -7,11 +7,11 @@ export const ROLE_LABELS: Record<Role, string> = {
   GERANT: 'Gérant',
 }
 
-export type Permission = 'admin:manage'
+export type Permission = 'admin:manage' | 'gestion:manage'
 
 const ROLE_PERMISSIONS: Record<Role, Permission[]> = {
   MEMBRE: [],
-  GERANT: ['admin:manage'],
+  GERANT: ['admin:manage', 'gestion:manage'],
 }
 
 export function can(role: string, permission: Permission): boolean {
