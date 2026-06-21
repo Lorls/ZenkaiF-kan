@@ -17,6 +17,18 @@ model User {
   createdAt      DateTime   @default(now())
   activities     Activity[]
   deposits       Deposit[]
+  malus          Malus[]
+}
+
+model Malus {
+  id           Int      @id @default(autoincrement())
+  userId       Int
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  malusName    String
+  points       Int
+  assignedById Int
+  weekStart    DateTime
+  createdAt    DateTime @default(now())
 }
 
 model ActivityType {

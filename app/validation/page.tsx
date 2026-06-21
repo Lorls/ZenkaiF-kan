@@ -29,102 +29,108 @@ export default function ValidationPage() {
   useEffect(() => { load() }, [week])
 
   async function reviewActivity(id: number, status: 'APPROUVE' | 'REJETE') {
-    await fetch(`/api/activities/${id}`, {
-      method: 'PATCH', headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ status }),
-    })
+    await fetch(`/api/activities/${id}`, { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ status }) })
     load()
   }
 
   async function reviewDeposit(id: number, status: 'APPROUVE' | 'REJETE') {
-    await fetch(`/api/deposits/${id}`, {
-      method: 'PATCH', headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ status }),
-    })
+    await fetch(`/api/deposits/${id}`, { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ status }) })
     load()
   }
 
   return (
     <>
       <Navbar />
-      <div className="pt-14 lg:pt-0 lg:ml-64">
-        <main className="max-w-3xl mx-auto px-4 sm:px-6 py-8 space-y-6">
+      <div className="pt-14 lg:pt-0 lg:ml-64 min-h-screen">
+        <div className="px-6 py-6 max-w-6xl mx-auto">
 
-          <div className="flex items-center justify-between flex-wrap gap-3">
+          <div className="flex items-center justify-between mb-6">
             <div>
               <h1 className="text-2xl font-bold text-ink">Validation</h1>
               <p className="text-ink-muted text-sm mt-0.5">{weekLabel(week)}</p>
             </div>
             <div className="flex items-center gap-2">
-              <button onClick={() => setWeek(w => shiftWeek(w, -1))} className="btn-ghost px-2 py-1 text-sm">←</button>
-              <button onClick={() => setWeek(getWeekStart())} disabled={isCurrentWeek} className="btn-ghost px-3 py-1 text-sm disabled:opacity-40">Cette semaine</button>
-              <button onClick={() => setWeek(w => shiftWeek(w, 1))} disabled={isCurrentWeek} className="btn-ghost px-2 py-1 text-sm disabled:opacity-40">→</button>
+              <button onClick={() => setWeek(w => shiftWeek(w, -1))} className="btn-ghost px-3 py-1.5 text-sm">←</button>
+              <button onClick={() => setWeek(getWeekStart())} disabled={isCurrentWeek} className="btn-ghost px-3 py-1.5 text-sm disabled:opacity-40">Cette semaine</button>
+              <button onClick={() => setWeek(w => shiftWeek(w, 1))} disabled={isCurrentWeek} className="btn-ghost px-3 py-1.5 text-sm disabled:opacity-40">→</button>
             </div>
           </div>
 
-          {/* Activités en attente */}
-          <div className="card overflow-hidden">
-            <div className="px-4 py-3 border-b border-border flex items-center justify-between">
-              <h2 className="text-base font-semibold text-ink">Activités en attente</h2>
-              <span className="text-xs font-mono text-ink-muted">{activities.length}</span>
-            </div>
-            {loading ? (
-              <div className="p-6 space-y-3">{[...Array(2)].map((_, i) => <div key={i} className="h-12 bg-bg-elevated rounded animate-pulse" />)}</div>
-            ) : activities.length === 0 ? (
-              <p className="p-4 text-ink-muted text-sm">Aucune activité en attente.</p>
-            ) : (
-              <div className="divide-y divide-border-subtle">
-                {activities.map(a => (
-                  <div key={a.id} className="px-4 py-3 flex items-start justify-between gap-3">
-                    <div className="min-w-0">
-                      <div className="flex items-center gap-2">
-                        <span className="font-medium text-ink text-sm">{a.user.username}</span>
-                        <span className="text-xs text-ink-muted">·</span>
-                        <span className="text-sm text-ink-muted">{a.activityName}</span>
-                        <span className="text-xs font-mono text-gold">{a.points} pts</span>
+          <div className="grid grid-cols-2 gap-6">
+
+            {/* Activités en attente */}
+            <div className="card overflow-hidden">
+              <div className="px-5 py-3 border-b border-border flex items-center justify-between">
+                <h2 className="text-base font-semibold text-ink">Activités en attente</h2>
+                <span className="text-xs font-mono bg-amber-950/40 text-amber-400 border border-amber-900/40 px-2 py-0.5 rounded">{activities.length}</span>
+              </div>
+              {loading ? (
+                <div className="p-5 space-y-3">{[...Array(3)].map((_, i) => <div key={i} className="h-14 bg-bg-elevated rounded animate-pulse" />)}</div>
+              ) : activities.length === 0 ? (
+                <div className="p-8 text-center">
+                  <p className="text-ink-muted text-sm">Aucune activité en attente.</p>
+                </div>
+              ) : (
+                <div className="divide-y divide-border-subtle">
+                  {activities.map(a => (
+                    <div key={a.id} className="px-5 py-4">
+                      <div className="flex items-start justify-between gap-3">
+                        <div className="min-w-0 flex-1">
+                          <div className="flex items-center gap-2 flex-wrap">
+                            <span className="font-semibold text-ink text-sm">{a.user.username}</span>
+                            <span className="text-ink-muted text-sm">·</span>
+                            <span className="text-sm text-ink-muted">{a.activityName}</span>
+                            <span className="text-xs font-mono font-bold text-gold">{a.points} pts</span>
+                          </div>
+                          <a href={a.discordLink} target="_blank" rel="noopener noreferrer" className="text-xs text-ink-faint hover:text-gold mt-1 block truncate transition-colors">↗ {a.discordLink}</a>
+                          <p className="text-[10px] text-ink-faint mt-1">{new Date(a.createdAt).toLocaleString('fr-FR')}</p>
+                        </div>
+                        <div className="flex items-center gap-1.5 shrink-0 mt-0.5">
+                          <button onClick={() => reviewActivity(a.id, 'APPROUVE')} className="px-3 py-1.5 rounded text-xs font-medium bg-emerald-950/40 border border-emerald-900/40 text-emerald-400 hover:bg-emerald-950 transition-colors cursor-pointer">Approuver</button>
+                          <button onClick={() => reviewActivity(a.id, 'REJETE')} className="btn-danger text-xs px-3 py-1.5">Rejeter</button>
+                        </div>
                       </div>
-                      <a href={a.discordLink} target="_blank" rel="noopener noreferrer" className="text-xs text-ink-faint hover:text-ink-muted mt-0.5 block truncate">↗ {a.discordLink}</a>
                     </div>
-                    <div className="flex items-center gap-1 shrink-0">
-                      <button onClick={() => reviewActivity(a.id, 'APPROUVE')} className="text-xs px-2 py-1 rounded bg-emerald-950/40 border border-emerald-900/40 text-emerald-400 hover:bg-emerald-950 transition-colors cursor-pointer">✓</button>
-                      <button onClick={() => reviewActivity(a.id, 'REJETE')} className="btn-danger text-xs px-2 py-1">✕</button>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            )}
-          </div>
-
-          {/* Dépôts en attente */}
-          <div className="card overflow-hidden">
-            <div className="px-4 py-3 border-b border-border flex items-center justify-between">
-              <h2 className="text-base font-semibold text-ink">Dépôts en attente</h2>
-              <span className="text-xs font-mono text-ink-muted">{deposits.length}</span>
+                  ))}
+                </div>
+              )}
             </div>
-            {loading ? (
-              <div className="p-6 space-y-3">{[...Array(2)].map((_, i) => <div key={i} className="h-12 bg-bg-elevated rounded animate-pulse" />)}</div>
-            ) : deposits.length === 0 ? (
-              <p className="p-4 text-ink-muted text-sm">Aucun dépôt en attente.</p>
-            ) : (
-              <div className="divide-y divide-border-subtle">
-                {deposits.map(d => (
-                  <div key={d.id} className="px-4 py-3 flex items-center justify-between gap-3">
-                    <div>
-                      <span className="font-medium text-ink text-sm">{d.user.username}</span>
-                      <span className="text-ink-muted text-sm"> — </span>
-                      <span className="font-mono text-ink text-sm">{d.amount.toLocaleString('fr-FR')} ¥</span>
-                    </div>
-                    <div className="flex items-center gap-1">
-                      <button onClick={() => reviewDeposit(d.id, 'APPROUVE')} className="text-xs px-2 py-1 rounded bg-emerald-950/40 border border-emerald-900/40 text-emerald-400 hover:bg-emerald-950 transition-colors cursor-pointer">✓</button>
-                      <button onClick={() => reviewDeposit(d.id, 'REJETE')} className="btn-danger text-xs px-2 py-1">✕</button>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            )}
-          </div>
 
-        </main>
+            {/* Dépôts en attente */}
+            <div className="card overflow-hidden">
+              <div className="px-5 py-3 border-b border-border flex items-center justify-between">
+                <h2 className="text-base font-semibold text-ink">Dépôts en attente</h2>
+                <span className="text-xs font-mono bg-amber-950/40 text-amber-400 border border-amber-900/40 px-2 py-0.5 rounded">{deposits.length}</span>
+              </div>
+              {loading ? (
+                <div className="p-5 space-y-3">{[...Array(3)].map((_, i) => <div key={i} className="h-14 bg-bg-elevated rounded animate-pulse" />)}</div>
+              ) : deposits.length === 0 ? (
+                <div className="p-8 text-center">
+                  <p className="text-ink-muted text-sm">Aucun dépôt en attente.</p>
+                </div>
+              ) : (
+                <div className="divide-y divide-border-subtle">
+                  {deposits.map(d => (
+                    <div key={d.id} className="px-5 py-4 flex items-center justify-between gap-3">
+                      <div>
+                        <div className="flex items-center gap-2">
+                          <span className="font-semibold text-ink text-sm">{d.user.username}</span>
+                          <span className="font-mono font-bold text-ink text-sm">{d.amount.toLocaleString('fr-FR')} ¥</span>
+                        </div>
+                        <p className="text-[10px] text-ink-faint mt-1">{new Date(d.createdAt).toLocaleString('fr-FR')}</p>
+                      </div>
+                      <div className="flex items-center gap-1.5 shrink-0">
+                        <button onClick={() => reviewDeposit(d.id, 'APPROUVE')} className="px-3 py-1.5 rounded text-xs font-medium bg-emerald-950/40 border border-emerald-900/40 text-emerald-400 hover:bg-emerald-950 transition-colors cursor-pointer">Approuver</button>
+                        <button onClick={() => reviewDeposit(d.id, 'REJETE')} className="btn-danger text-xs px-3 py-1.5">Rejeter</button>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+
+          </div>
+        </div>
       </div>
     </>
   )

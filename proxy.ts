@@ -7,8 +7,8 @@ const PUBLIC = ['/login', '/api/auth']
 
 const GERANT_ONLY = [
   '/admin', '/api/admin',
-  '/activites', '/validation', '/classement', '/salaires',
-  '/api/activity-types', '/api/settings', '/api/gestion',
+  '/activites', '/validation', '/classement', '/salaires', '/malus',
+  '/api/activity-types', '/api/settings', '/api/gestion', '/api/malus',
 ]
 
 export async function proxy(req: NextRequest) {

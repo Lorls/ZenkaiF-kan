@@ -12,7 +12,7 @@ export async function GET(req: NextRequest) {
   const week = parseWeekParam(req.nextUrl.searchParams.get('week'))
   const weekEnd = new Date(week); weekEnd.setUTCDate(weekEnd.getUTCDate() + 7)
 
-  const [activities, deposits, setting] = await Promise.all([
+  const [activities, deposits, malus, setting] = await Promise.all([
     db.activity.findMany({
       where: { userId: user.userId, weekStart: { gte: week, lt: weekEnd } },
       orderBy: { createdAt: 'desc' },
@@ -21,18 +21,25 @@ export async function GET(req: NextRequest) {
       where: { userId: user.userId, weekStart: { gte: week, lt: weekEnd } },
       orderBy: { createdAt: 'desc' },
     }),
+    db.malus.findMany({
+      where: { userId: user.userId, weekStart: { gte: week, lt: weekEnd } },
+      orderBy: { createdAt: 'desc' },
+    }),
     db.setting.findUnique({ where: { key: 'salaryPercent' } }),
   ])
 
   const salaryPercent = setting ? Number(setting.value) : DEFAULT_SALARY_PERCENT
   const pointsApprouves = activities.filter(a => a.status === 'APPROUVE').reduce((s, a) => s + a.points, 0)
+  const pointsMalus = malus.reduce((s, m) => s + m.points, 0)
   const totalDeposeApprouve = deposits.filter(d => d.status === 'APPROUVE').reduce((s, d) => s + d.amount, 0)
   const salaireEstime = totalDeposeApprouve * (salaryPercent / 100)
 
   return NextResponse.json({
     activities,
     deposits,
+    malus,
     pointsApprouves,
+    pointsMalus,
     totalDeposeApprouve,
     salaireEstime,
     salaryPercent,

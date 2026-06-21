@@ -42,80 +42,77 @@ export default function SalairesPage() {
   return (
     <>
       <Navbar />
-      <div className="pt-14 lg:pt-0 lg:ml-64">
-        <main className="max-w-3xl mx-auto px-4 sm:px-6 py-8 space-y-6">
+      <div className="pt-14 lg:pt-0 lg:ml-64 min-h-screen">
+        <div className="px-6 py-6 max-w-6xl mx-auto">
 
-          <div className="flex items-center justify-between flex-wrap gap-3">
+          <div className="flex items-center justify-between mb-6">
             <div>
               <h1 className="text-2xl font-bold text-ink">Salaires</h1>
               <p className="text-ink-muted text-sm mt-0.5">{weekLabel(week)}</p>
             </div>
             <div className="flex items-center gap-2">
-              <button onClick={() => setWeek(w => shiftWeek(w, -1))} className="btn-ghost px-2 py-1 text-sm">←</button>
-              <button onClick={() => setWeek(getWeekStart())} disabled={isCurrentWeek} className="btn-ghost px-3 py-1 text-sm disabled:opacity-40">Cette semaine</button>
-              <button onClick={() => setWeek(w => shiftWeek(w, 1))} disabled={isCurrentWeek} className="btn-ghost px-2 py-1 text-sm disabled:opacity-40">→</button>
+              <button onClick={() => setWeek(w => shiftWeek(w, -1))} className="btn-ghost px-3 py-1.5 text-sm">←</button>
+              <button onClick={() => setWeek(getWeekStart())} disabled={isCurrentWeek} className="btn-ghost px-3 py-1.5 text-sm disabled:opacity-40">Cette semaine</button>
+              <button onClick={() => setWeek(w => shiftWeek(w, 1))} disabled={isCurrentWeek} className="btn-ghost px-3 py-1.5 text-sm disabled:opacity-40">→</button>
             </div>
           </div>
 
-          {/* Paramètre pourcentage */}
-          <div className="card p-6">
-            <h2 className="text-base font-semibold text-ink mb-1">Pourcentage de salaire</h2>
-            <p className="text-ink-muted text-sm mb-4">Part des dépôts reversée en salaire à chaque membre.</p>
-            <form onSubmit={handleSavePercent} className="flex items-center gap-2">
-              <input type="number" value={percent} onChange={e => setPercent(e.target.value)} className="input w-24" min="0" max="100" step="0.1" />
-              <span className="text-ink-muted">%</span>
-              <button type="submit" disabled={savingPercent} className="btn-primary">
-                {savingPercent ? 'Sauvegarde...' : 'Sauvegarder'}
-              </button>
-            </form>
-            {percentError && <p className="text-red-400 text-sm mt-2">{percentError}</p>}
+          {/* Stats + paramètre sur une ligne */}
+          <div className="grid grid-cols-3 gap-4 mb-6">
+            <div className="card p-5">
+              <p className="text-xs text-ink-muted mb-1">Total déposé (semaine)</p>
+              <p className="text-3xl font-bold text-ink">{(data?.totalGeneral ?? 0).toLocaleString('fr-FR')} ¥</p>
+            </div>
+            <div className="card p-5">
+              <p className="text-xs text-ink-muted mb-1">Total salaires reversés</p>
+              <p className="text-3xl font-bold text-emerald-400">{(data?.salaireTotal ?? 0).toLocaleString('fr-FR')} ¥</p>
+            </div>
+            <div className="card p-5">
+              <p className="text-xs text-ink-muted mb-2">Pourcentage de salaire</p>
+              <form onSubmit={handleSavePercent} className="flex items-center gap-2">
+                <input type="number" value={percent} onChange={e => setPercent(e.target.value)} className="input w-20 text-lg font-bold" min="0" max="100" step="0.1" />
+                <span className="text-ink-muted text-lg font-bold">%</span>
+                <button type="submit" disabled={savingPercent} className="btn-primary text-xs px-3 py-1.5 ml-1">
+                  {savingPercent ? '...' : 'Sauver'}
+                </button>
+              </form>
+              {percentError && <p className="text-red-400 text-xs mt-1">{percentError}</p>}
+            </div>
           </div>
 
-          {/* Résumé semaine */}
-          {data && data.salaires.length > 0 && (
-            <div className="grid grid-cols-2 gap-3">
-              <div className="card p-4 text-center">
-                <p className="text-2xl font-bold text-ink">{data.totalGeneral.toLocaleString('fr-FR')} ¥</p>
-                <p className="text-xs text-ink-muted mt-1">Total déposé</p>
-              </div>
-              <div className="card p-4 text-center">
-                <p className="text-2xl font-bold text-emerald-400">{data.salaireTotal.toLocaleString('fr-FR')} ¥</p>
-                <p className="text-xs text-ink-muted mt-1">Total salaires ({data.salaryPercent}%)</p>
-              </div>
-            </div>
-          )}
-
-          {/* Tableau */}
+          {/* Tableau détail */}
           <div className="card overflow-hidden">
-            <div className="px-4 py-3 border-b border-border">
+            <div className="px-5 py-3 border-b border-border">
               <h2 className="text-base font-semibold text-ink">Détail par membre</h2>
             </div>
             {loading ? (
-              <div className="p-6 space-y-3">{[...Array(3)].map((_, i) => <div key={i} className="h-10 bg-bg-elevated rounded animate-pulse" />)}</div>
+              <div className="p-6 space-y-3">{[...Array(4)].map((_, i) => <div key={i} className="h-12 bg-bg-elevated rounded animate-pulse" />)}</div>
             ) : !data || data.salaires.length === 0 ? (
-              <p className="p-4 text-ink-muted text-sm">Aucun dépôt approuvé cette semaine.</p>
+              <div className="py-16 text-center">
+                <p className="text-ink-muted">Aucun dépôt approuvé cette semaine.</p>
+              </div>
             ) : (
               <table className="w-full text-sm">
                 <thead>
                   <tr className="border-b border-border bg-bg-elevated/40">
-                    <th className="text-left px-4 py-2.5 text-ink-muted font-medium">Membre</th>
-                    <th className="text-right px-4 py-2.5 text-ink-muted font-medium">Déposé</th>
-                    <th className="text-right px-4 py-2.5 text-ink-muted font-medium">Salaire</th>
+                    <th className="text-left px-5 py-3 text-ink-muted font-medium">Membre</th>
+                    <th className="text-right px-5 py-3 text-ink-muted font-medium w-56">Total déposé</th>
+                    <th className="text-right px-5 py-3 text-ink-muted font-medium w-56">Salaire ({data.salaryPercent}%)</th>
                   </tr>
                 </thead>
                 <tbody>
                   {data.salaires.map(s => (
-                    <tr key={s.userId} className="border-b border-border-subtle last:border-0">
-                      <td className="px-4 py-3">
-                        <div className="flex items-center gap-2">
-                          <div className="w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold bg-bg-elevated text-ink-muted">
+                    <tr key={s.userId} className="border-b border-border-subtle last:border-0 hover:bg-bg-elevated/20 transition-colors">
+                      <td className="px-5 py-4">
+                        <div className="flex items-center gap-3">
+                          <div className="w-8 h-8 rounded-full flex items-center justify-center text-sm font-bold bg-bg-elevated text-ink-muted">
                             {s.username[0].toUpperCase()}
                           </div>
                           <span className="font-medium text-ink">{s.username}</span>
                         </div>
                       </td>
-                      <td className="px-4 py-3 text-right font-mono text-ink">{s.totalDepose.toLocaleString('fr-FR')} ¥</td>
-                      <td className="px-4 py-3 text-right font-mono font-bold text-emerald-400">{s.salaire.toLocaleString('fr-FR')} ¥</td>
+                      <td className="px-5 py-4 text-right font-mono text-ink">{s.totalDepose.toLocaleString('fr-FR')} ¥</td>
+                      <td className="px-5 py-4 text-right font-mono font-bold text-emerald-400 text-base">{s.salaire.toLocaleString('fr-FR')} ¥</td>
                     </tr>
                   ))}
                 </tbody>
@@ -123,7 +120,7 @@ export default function SalairesPage() {
             )}
           </div>
 
-        </main>
+        </div>
       </div>
     </>
   )
