@@ -2,7 +2,6 @@ import { NextRequest, NextResponse } from 'next/server'
 import { db } from '@/lib/db'
 import { guard, unauthorized } from '@/lib/guard'
 import { logAction } from '@/lib/log'
-import { GRADES, DEFAULT_THRESHOLDS, GradeKey } from '@/lib/grades'
 import { getWeekStart, getNextWeekStart, formatWeekRange } from '@/lib/week'
 
 export async function POST(req: NextRequest) {
@@ -34,45 +33,35 @@ export async function POST(req: NextRequest) {
     diff: { after: { id: donation.id, ninjaId: Number(ninjaId), resource, amount: Number(amount), pointsEarned, exonerationEarned } },
   })
 
-  // Auto-paiement semaine suivante si exonérations >= taxe du grade
+  // Auto-paiement si exonérations >= 25 000 ¥ (seuil fixe)
   const updated = await db.ninja.findUnique({ where: { id: Number(ninjaId) } })
-  if (updated && updated.exonerations >= GRADES[0].taxRyos) {
-    const settings = await db.setting.findMany({
-      where: { key: { in: GRADES.map(g => `grade:${g.key}`) } },
+  if (updated && updated.exonerations >= 25000) {
+    // Cible = semaine courante si non payée, sinon semaine suivante (identique au panel d'exonération)
+    const currentWeekStart = getWeekStart()
+    const currentWeekTax = await db.tax.findUnique({
+      where: { ninjaId_weekStart: { ninjaId: Number(ninjaId), weekStart: currentWeekStart } },
     })
-    const thMap = Object.fromEntries(settings.map(s => [s.key.replace('grade:', ''), parseFloat(s.value)]))
-    const th = (k: string) => thMap[k] ?? DEFAULT_THRESHOLDS[k as GradeKey]
-    const grade = [...GRADES].reverse().find(g => updated.points >= th(g.key)) ?? null
-    const taxRyos = grade?.taxRyos ?? 0
+    const targetWeekStart = currentWeekTax?.paid ? getNextWeekStart() : currentWeekStart
 
-    if (taxRyos > 0 && updated.exonerations >= taxRyos) {
-      // Cible = semaine courante si non payée, sinon semaine suivante (identique au panel d'exonération)
-      const currentWeekStart = getWeekStart()
-      const currentWeekTax = await db.tax.findUnique({
-        where: { ninjaId_weekStart: { ninjaId: Number(ninjaId), weekStart: currentWeekStart } },
+    const existing = targetWeekStart === currentWeekStart ? currentWeekTax : await db.tax.findUnique({
+      where: { ninjaId_weekStart: { ninjaId: Number(ninjaId), weekStart: targetWeekStart } },
+    })
+    if (!existing?.paid) {
+      const [autoTax] = await db.$transaction([
+        db.tax.upsert({
+          where: { ninjaId_weekStart: { ninjaId: Number(ninjaId), weekStart: targetWeekStart } },
+          update: { paid: true },
+          create: { ninjaId: Number(ninjaId), weekStart: targetWeekStart, paid: true },
+        }),
+        db.ninja.update({
+          where: { id: Number(ninjaId) },
+          data: { exonerations: { decrement: 25000 } },
+        }),
+      ])
+      await logAction({
+        user, action: 'update', entity: 'tax', entityId: autoTax.id, entityName: ninja.name,
+        diff: { paid: { from: false, to: true }, ninjaId: Number(ninjaId), weekStart: targetWeekStart.toISOString(), week: formatWeekRange(targetWeekStart) },
       })
-      const targetWeekStart = currentWeekTax?.paid ? getNextWeekStart() : currentWeekStart
-
-      const existing = targetWeekStart === currentWeekStart ? currentWeekTax : await db.tax.findUnique({
-        where: { ninjaId_weekStart: { ninjaId: Number(ninjaId), weekStart: targetWeekStart } },
-      })
-      if (!existing?.paid) {
-        const [autoTax] = await db.$transaction([
-          db.tax.upsert({
-            where: { ninjaId_weekStart: { ninjaId: Number(ninjaId), weekStart: targetWeekStart } },
-            update: { paid: true },
-            create: { ninjaId: Number(ninjaId), weekStart: targetWeekStart, paid: true },
-          }),
-          db.ninja.update({
-            where: { id: Number(ninjaId) },
-            data: { exonerations: { decrement: taxRyos } },
-          }),
-        ])
-        await logAction({
-          user, action: 'update', entity: 'tax', entityId: autoTax.id, entityName: ninja.name,
-          diff: { paid: { from: false, to: true }, ninjaId: Number(ninjaId), weekStart: targetWeekStart.toISOString(), week: formatWeekRange(targetWeekStart) },
-        })
-      }
     }
   }
 
