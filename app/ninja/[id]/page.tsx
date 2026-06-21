@@ -200,8 +200,14 @@ export default function NinjaPage() {
     ? ninja.taxes.some(t => t.paid && getWeekStart(new Date(t.weekStart)).getTime() === nextWeekStart.getTime())
     : false
   const exoRyos = Math.round(ninja?.exonerations ?? 0)
-  const nextWeekOwed = nextWeekPaid ? 0 : Math.max(0, weeklyTaxRyos - exoRyos)
-  const nextWeekExoRyos = nextWeekPaid ? weeklyTaxRyos : Math.min(exoRyos, weeklyTaxRyos)
+
+  // Le panel d'exonération cible toujours la prochaine semaine DUE :
+  // si la semaine courante n'est pas payée → "Cette semaine", sinon → "Semaine prochaine"
+  const currentWeekPaid = currentWeekTax?.paid === true
+  const exoTargetIsCurrent = !currentWeekPaid
+  const exoTargetLabel = exoTargetIsCurrent ? 'Cette semaine' : 'Semaine prochaine'
+  const exoTargetAlreadyPaid = !exoTargetIsCurrent && nextWeekPaid
+  const exoTargetOwed = exoTargetAlreadyPaid ? 0 : Math.max(0, weeklyTaxRyos - exoRyos)
 
   if (loading) {
     return (
@@ -351,8 +357,8 @@ export default function NinjaPage() {
                     {weeklyTaxRyos.toLocaleString('fr-FR')} ¥ / semaine
                   </p>
                   <div className="rounded-lg bg-bg-elevated/50 p-2.5 border border-border-subtle space-y-1.5">
-                    <p className="text-[10px] uppercase tracking-wider text-ink-faint font-medium">Semaine prochaine</p>
-                    {nextWeekPaid ? (
+                    <p className="text-[10px] uppercase tracking-wider text-ink-faint font-medium">{exoTargetLabel}</p>
+                    {exoTargetAlreadyPaid ? (
                       <div className="flex items-center gap-1.5 text-emerald-400">
                         <svg viewBox="0 0 24 24" className="w-3 h-3" fill="none" stroke="currentColor" strokeWidth="2.5">
                           <path strokeLinecap="round" strokeLinejoin="round" d="M4.5 12.75l6 6 9-13.5" />
@@ -367,11 +373,13 @@ export default function NinjaPage() {
                         </div>
                         <div className="flex justify-between">
                           <span className="text-xs text-ink-muted">Exonération</span>
-                          <span className="text-xs font-mono text-emerald-400">−{exoRyos.toLocaleString('fr-FR')} ¥</span>
+                          <span className="text-xs font-mono text-emerald-400">−{Math.min(exoRyos, weeklyTaxRyos).toLocaleString('fr-FR')} ¥</span>
                         </div>
                         <div className="flex justify-between border-t border-border-subtle pt-1.5">
                           <span className="text-xs font-semibold text-ink">À payer</span>
-                          <span className="text-xs font-mono font-bold text-gold">{nextWeekOwed.toLocaleString('fr-FR')} ¥</span>
+                          <span className={`text-xs font-mono font-bold ${exoTargetOwed === 0 ? 'text-emerald-400' : 'text-gold'}`}>
+                            {exoTargetOwed.toLocaleString('fr-FR')} ¥
+                          </span>
                         </div>
                       </>
                     ) : (
