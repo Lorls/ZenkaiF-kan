@@ -2,6 +2,7 @@
 
 import { useRouter } from 'next/navigation'
 import { GRADES, GradeThresholds } from '@/lib/grades'
+import { getWeekStart } from '@/lib/week'
 
 interface Tax {
   weekStart: string
@@ -25,7 +26,18 @@ interface NinjaCardProps {
 export default function NinjaCard({ ninja, thresholds, canWrite = true, onDelete }: NinjaCardProps) {
   const router = useRouter()
 
-  const unpaidCount = ninja.taxes.filter(t => !t.paid).length
+  const currentWeekStart = getWeekStart()
+  const currentWeekTax = ninja.taxes.find(
+    t => new Date(t.weekStart).getTime() === currentWeekStart.getTime()
+  )
+  const currentWeekPaid = currentWeekTax?.paid === true
+
+  // Semaines impayées antérieures + semaine courante si non payée
+  const oldUnpaid = ninja.taxes.filter(
+    t => !t.paid && new Date(t.weekStart).getTime() !== currentWeekStart.getTime()
+  ).length
+  const unpaidCount = oldUnpaid + (currentWeekPaid ? 0 : 1)
+
   const accentClass = unpaidCount > 0
     ? 'border-l-red-800/70'
     : ninja.points > 0
