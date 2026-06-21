@@ -3,7 +3,7 @@ import { db } from '@/lib/db'
 import { guard, unauthorized } from '@/lib/guard'
 import { logAction } from '@/lib/log'
 import { GRADES, DEFAULT_THRESHOLDS, GradeKey } from '@/lib/grades'
-import { getNextWeekStart, formatWeekRange } from '@/lib/week'
+import { getWeekStart, getNextWeekStart, formatWeekRange } from '@/lib/week'
 
 export async function POST(req: NextRequest) {
   const user = await guard('ninjas:write')
@@ -46,16 +46,22 @@ export async function POST(req: NextRequest) {
     const taxRyos = grade?.taxRyos ?? 0
 
     if (taxRyos > 0 && updated.exonerations >= taxRyos) {
-      const nextWeekStart = getNextWeekStart()
-      const existing = await db.tax.findUnique({
-        where: { ninjaId_weekStart: { ninjaId: Number(ninjaId), weekStart: nextWeekStart } },
+      // Cible = semaine courante si non payée, sinon semaine suivante (identique au panel d'exonération)
+      const currentWeekStart = getWeekStart()
+      const currentWeekTax = await db.tax.findUnique({
+        where: { ninjaId_weekStart: { ninjaId: Number(ninjaId), weekStart: currentWeekStart } },
+      })
+      const targetWeekStart = currentWeekTax?.paid ? getNextWeekStart() : currentWeekStart
+
+      const existing = targetWeekStart === currentWeekStart ? currentWeekTax : await db.tax.findUnique({
+        where: { ninjaId_weekStart: { ninjaId: Number(ninjaId), weekStart: targetWeekStart } },
       })
       if (!existing?.paid) {
         const [autoTax] = await db.$transaction([
           db.tax.upsert({
-            where: { ninjaId_weekStart: { ninjaId: Number(ninjaId), weekStart: nextWeekStart } },
+            where: { ninjaId_weekStart: { ninjaId: Number(ninjaId), weekStart: targetWeekStart } },
             update: { paid: true },
-            create: { ninjaId: Number(ninjaId), weekStart: nextWeekStart, paid: true },
+            create: { ninjaId: Number(ninjaId), weekStart: targetWeekStart, paid: true },
           }),
           db.ninja.update({
             where: { id: Number(ninjaId) },
@@ -64,7 +70,7 @@ export async function POST(req: NextRequest) {
         ])
         await logAction({
           user, action: 'update', entity: 'tax', entityId: autoTax.id, entityName: ninja.name,
-          diff: { paid: { from: false, to: true }, ninjaId: Number(ninjaId), weekStart: nextWeekStart.toISOString(), week: formatWeekRange(nextWeekStart) },
+          diff: { paid: { from: false, to: true }, ninjaId: Number(ninjaId), weekStart: targetWeekStart.toISOString(), week: formatWeekRange(targetWeekStart) },
         })
       }
     }
