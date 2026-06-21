@@ -29,8 +29,8 @@ export async function GET() {
       },
       select: { userId: true, entity: true, entityId: true, diff: true },
     }),
-    // Donations réellement existantes en base (pas supprimées)
-    db.donation.findMany({ select: { id: true, amount: true } }),
+    // Donations réellement existantes en base (pas supprimées), hors Ryo
+    db.donation.findMany({ where: { resource: { not: 'Ryo' } }, select: { id: true, amount: true } }),
     // Taxes actuellement marquées comme payées
     db.tax.findMany({ where: { paid: true }, select: { id: true } }),
   ])
