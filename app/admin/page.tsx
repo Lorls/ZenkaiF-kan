@@ -28,6 +28,8 @@ export default function AdminPage() {
   const [wiping, setWiping] = useState(false)
   const [resettingWeek, setResettingWeek] = useState(false)
   const [weekResetCount, setWeekResetCount] = useState<number | null>(null)
+  const [applyingExo, setApplyingExo] = useState(false)
+  const [exoAppliedCount, setExoAppliedCount] = useState<number | null>(null)
   const [error, setError] = useState('')
   const [roleError, setRoleError] = useState('')
 
@@ -66,6 +68,15 @@ export default function AdminPage() {
     } else {
       load()
     }
+  }
+
+  async function handleApplyExonerations() {
+    if (!confirm('Appliquer les exonérations rétroactivement ?\n\nTous les ninjas avec 25 000 ¥+ d\'exonérations verront leur semaine cible marquée payée et 25 000 ¥ déduits.')) return
+    setApplyingExo(true)
+    const res = await fetch('/api/taxes/apply-exonerations', { method: 'POST' })
+    const data = await res.json()
+    if (res.ok) setExoAppliedCount(data.applied)
+    setApplyingExo(false)
   }
 
   async function handleResetWeek() {
@@ -228,6 +239,27 @@ export default function AdminPage() {
               </tbody>
             </table>
           )}
+        </div>
+
+        {/* Apply exonerations retroactively */}
+        <div className="card p-6 border-emerald-900/40">
+          <h2 className="text-base font-semibold text-emerald-400 mb-1">Appliquer les exonérations</h2>
+          <p className="text-ink-muted text-sm mb-4">
+            Paye automatiquement la semaine cible de tous les ninjas ayant 25 000 ¥ ou plus d&apos;exonérations accumulées. Utile pour rattraper les donations de la semaine dernière.
+          </p>
+          {exoAppliedCount !== null && (
+            <p className="text-emerald-400 text-sm mb-3">{exoAppliedCount} ninja{exoAppliedCount > 1 ? 's' : ''} exonéré{exoAppliedCount > 1 ? 's' : ''}.</p>
+          )}
+          <button
+            onClick={handleApplyExonerations}
+            disabled={applyingExo}
+            className="flex items-center gap-2 px-4 py-2 rounded-lg bg-emerald-950/40 border border-emerald-900/50 text-emerald-400 hover:bg-emerald-950 hover:text-emerald-300 transition-colors duration-200 text-sm font-medium cursor-pointer disabled:opacity-50"
+          >
+            <svg viewBox="0 0 24 24" className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth="1.5">
+              <path strokeLinecap="round" strokeLinejoin="round" d="M9 12.75L11.25 15 15 9.75M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+            </svg>
+            {applyingExo ? 'Application...' : 'Appliquer les exonérations'}
+          </button>
         </div>
 
         {/* Reset current week */}
