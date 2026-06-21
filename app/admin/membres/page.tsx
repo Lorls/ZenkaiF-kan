@@ -25,7 +25,15 @@ const ROLE_LABELS: Record<string, string> = {
   VISITEUR: 'Visiteur',
 }
 
-const MEDAL = ['🥇', '🥈', '🥉']
+const MEDAL_COLORS = ['text-yellow-400', 'text-slate-400', 'text-amber-700']
+
+function MedalIcon({ rank, className }: { rank: number; className?: string }) {
+  return (
+    <svg viewBox="0 0 24 24" className={`w-4 h-4 ${MEDAL_COLORS[rank]} ${className ?? ''}`} fill="currentColor">
+      <path d="M12 2a5 5 0 100 10A5 5 0 0012 2zm0 2a3 3 0 110 6 3 3 0 010-6zM8.5 11.5l-3 8.5 3.5-1.5L12 21l3-2.5 3.5 1.5-3-8.5A6.97 6.97 0 0112 13a6.97 6.97 0 01-3.5-.5z" />
+    </svg>
+  )
+}
 
 const COLS = [
   { key: 'donations',     label: 'Ressources', pts: 1  },
@@ -94,8 +102,8 @@ export default function AdminMembresPage() {
                   >
                     {/* Nom */}
                     <div className="flex items-center gap-2 min-w-0">
-                      <span className="w-5 shrink-0 text-sm text-ink-faint">
-                        {i < 3 && m.total > 0 ? MEDAL[i] : <span className="font-mono text-xs">{i + 1}</span>}
+                      <span className="w-5 shrink-0 flex items-center justify-center">
+                        {i < 3 && m.total > 0 ? <MedalIcon rank={i} /> : <span className="font-mono text-xs text-ink-faint">{i + 1}</span>}
                       </span>
                       <div className="min-w-0">
                         <p className="text-sm font-medium text-ink truncate">{m.username}</p>
