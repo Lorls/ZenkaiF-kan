@@ -9,7 +9,7 @@ const REPORT_POINTS: Record<string, number> = {
 }
 
 export async function GET() {
-  const user = await guard('ninjas:read')
+  const user = await guard('rapports:review')
   if (!user) return unauthorized()
 
   const [users, logs, existingDonations, paidTaxes] = await Promise.all([

@@ -13,9 +13,9 @@ export async function GET(req: NextRequest) {
   const { searchParams } = new URL(req.url)
   const status = searchParams.get('status')
   const mine = searchParams.get('mine') === 'true'
-  const isAdmin = can(user.role, 'admin:manage')
+  const isReviewer = can(user.role, 'rapports:review')
 
-  const where = isAdmin && !mine
+  const where = isReviewer && !mine
     ? status ? { status } : {}
     : { userId: user.userId }
 

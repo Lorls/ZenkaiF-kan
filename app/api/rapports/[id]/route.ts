@@ -3,7 +3,7 @@ import { db } from '@/lib/db'
 import { guard, unauthorized } from '@/lib/guard'
 
 export async function PATCH(req: NextRequest, context: { params: Promise<{ id: string }> }) {
-  const user = await guard('admin:manage')
+  const user = await guard('rapports:review')
   if (!user) return unauthorized()
 
   const { id } = await context.params
@@ -31,7 +31,7 @@ export async function PATCH(req: NextRequest, context: { params: Promise<{ id: s
 }
 
 export async function DELETE(_: NextRequest, context: { params: Promise<{ id: string }> }) {
-  const user = await guard('admin:manage')
+  const user = await guard('rapports:review')
   if (!user) return unauthorized()
 
   const { id } = await context.params
