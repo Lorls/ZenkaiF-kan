@@ -42,7 +42,7 @@ export default function RapportsPage() {
   const currentWeekStart = getFridayWeekStart()
 
   const load = useCallback(async () => {
-    const res = await fetch('/api/rapports')
+    const res = await fetch('/api/rapports?mine=true')
     if (!res.ok) { router.push('/dashboard'); return }
     setRapports(await res.json())
     setLoading(false)

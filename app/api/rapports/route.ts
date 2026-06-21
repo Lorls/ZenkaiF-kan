@@ -12,9 +12,10 @@ export async function GET(req: NextRequest) {
 
   const { searchParams } = new URL(req.url)
   const status = searchParams.get('status')
+  const mine = searchParams.get('mine') === 'true'
   const isAdmin = can(user.role, 'admin:manage')
 
-  const where = isAdmin
+  const where = isAdmin && !mine
     ? status ? { status } : {}
     : { userId: user.userId }
 
