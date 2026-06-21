@@ -14,6 +14,7 @@ export async function GET() {
 
   const [users, logs] = await Promise.all([
     db.user.findMany({
+      where: { username: { not: 'admin' } },
       include: { rapports: { where: { status: 'APPROUVE' } } },
       orderBy: { username: 'asc' },
     }),
