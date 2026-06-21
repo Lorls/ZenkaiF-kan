@@ -1,0 +1,14 @@
+node_modules/
+.next/
+.git/
+.claude/
+*.db
+*.db-journal
+*.db-shm
+*.db-wal
+.env
+.env.local
+.env.production
+.env.production.local
+.DS_Store
+Thumbs.db
