@@ -203,11 +203,14 @@ export default function NinjaPage() {
 
   // Le panel d'exonération cible toujours la prochaine semaine DUE :
   // si la semaine courante n'est pas payée → "Cette semaine", sinon → "Semaine prochaine"
+  // Les exonérations ne couvrent que cette semaine cible ; si elle est déjà payée, elles
+  // sont considérées consommées et n'apparaissent pas sur la semaine suivante.
   const currentWeekPaid = currentWeekTax?.paid === true
   const exoTargetIsCurrent = !currentWeekPaid
   const exoTargetLabel = exoTargetIsCurrent ? 'Cette semaine' : 'Semaine prochaine'
   const exoTargetAlreadyPaid = !exoTargetIsCurrent && nextWeekPaid
-  const exoTargetOwed = exoTargetAlreadyPaid ? 0 : Math.max(0, weeklyTaxRyos - exoRyos)
+  const effectiveExoRyos = exoTargetIsCurrent ? exoRyos : 0
+  const exoTargetOwed = exoTargetAlreadyPaid ? 0 : Math.max(0, weeklyTaxRyos - effectiveExoRyos)
 
   if (loading) {
     return (
@@ -365,7 +368,7 @@ export default function NinjaPage() {
                         </svg>
                         <span className="text-xs font-medium">Déjà payée — 0 ¥ dû</span>
                       </div>
-                    ) : exoRyos > 0 ? (
+                    ) : effectiveExoRyos > 0 ? (
                       <>
                         <div className="flex justify-between">
                           <span className="text-xs text-ink-muted">Base</span>
@@ -373,7 +376,7 @@ export default function NinjaPage() {
                         </div>
                         <div className="flex justify-between">
                           <span className="text-xs text-ink-muted">Exonération</span>
-                          <span className="text-xs font-mono text-emerald-400">−{Math.min(exoRyos, weeklyTaxRyos).toLocaleString('fr-FR')} ¥</span>
+                          <span className="text-xs font-mono text-emerald-400">−{Math.min(effectiveExoRyos, weeklyTaxRyos).toLocaleString('fr-FR')} ¥</span>
                         </div>
                         <div className="flex justify-between border-t border-border-subtle pt-1.5">
                           <span className="text-xs font-semibold text-ink">À payer</span>
