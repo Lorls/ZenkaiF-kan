@@ -30,12 +30,12 @@ export async function GET() {
       select: { userId: true, entity: true, entityId: true, diff: true },
     }),
     // Donations réellement existantes en base (pas supprimées)
-    db.donation.findMany({ select: { id: true } }),
+    db.donation.findMany({ select: { id: true, amount: true } }),
     // Taxes actuellement marquées comme payées
     db.tax.findMany({ where: { paid: true }, select: { id: true } }),
   ])
 
-  const existingDonationIds = new Set(existingDonations.map(d => d.id))
+  const donationAmounts = new Map(existingDonations.map(d => [d.id, d.amount]))
   const paidTaxIds = new Set(paidTaxes.map(t => t.id))
 
   // userId → nb donations existantes
@@ -47,9 +47,10 @@ export async function GET() {
     if (!log.userId || !log.entityId) continue
 
     if (log.entity === 'donation') {
-      // Ne compter que si la donation existe encore
-      if (existingDonationIds.has(log.entityId)) {
-        donationsByUser.set(log.userId, (donationsByUser.get(log.userId) ?? 0) + 1)
+      // Ne compter que si la donation existe encore, et sommer les amounts
+      const amount = donationAmounts.get(log.entityId)
+      if (amount !== undefined) {
+        donationsByUser.set(log.userId, (donationsByUser.get(log.userId) ?? 0) + amount)
       }
     } else if (log.entity === 'tax' && log.diff) {
       // Ne compter que si la taxe est actuellement payée + dédupliquer par taxId
