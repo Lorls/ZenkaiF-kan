@@ -1,13 +1,12 @@
 FROM node:20-slim AS base
 WORKDIR /app
 
-# Install deps
 FROM base AS deps
 COPY package*.json ./
 RUN npm ci
 
-# Build
 FROM base AS builder
+RUN apt-get update -y && apt-get install -y openssl && rm -rf /var/lib/apt/lists/*
 COPY --from=deps /app/node_modules ./node_modules
 COPY . .
 RUN npx prisma generate
