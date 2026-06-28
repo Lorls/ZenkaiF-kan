@@ -16,7 +16,6 @@ model User {
   sessionVersion Int        @default(0)
   createdAt      DateTime   @default(now())
   activities     Activity[]
-  deposits       Deposit[]
   malus          Malus[]
 }
 
@@ -54,18 +53,6 @@ model Activity {
   reviewedById   Int?
   reviewedAt     DateTime?
   createdAt      DateTime      @default(now())
-}
-
-model Deposit {
-  id           Int      @id @default(autoincrement())
-  userId       Int
-  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  amount       Float
-  status       String   @default("EN_ATTENTE")
-  weekStart    DateTime
-  reviewedById Int?
-  reviewedAt   DateTime?
-  createdAt    DateTime @default(now())
 }
 
 model Setting {

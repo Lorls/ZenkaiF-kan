@@ -41,8 +41,8 @@ export default function LoginPage() {
               <path strokeLinecap="round" strokeLinejoin="round" d="M12 3v1m0 16v1M4.22 4.22l.707.707m12.728 12.728.707.707M1 12h1m20 0h1M4.22 19.78l.707-.707M18.95 5.05l.707-.707M12 6a6 6 0 100 12 6 6 0 000-12z" />
             </svg>
           </div>
-          <h1 className="text-3xl font-bold text-ink tracking-tight">Gaiko</h1>
-          <p className="text-ink-muted text-sm mt-1.5">Diplomatie</p>
+          <h1 className="text-3xl font-bold text-ink tracking-tight">Fūkan</h1>
+          <p className="text-ink-muted text-sm mt-1.5">Institut du Sceau</p>
         </div>
 
         <form onSubmit={handleSubmit} className="card p-6 space-y-4">

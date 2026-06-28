@@ -5,12 +5,10 @@ import Navbar from '@/components/Navbar'
 import { weekLabel, shiftWeek, getWeekStart } from '@/lib/week'
 
 interface Activity { id: number; activityName: string; points: number; discordLink: string; createdAt: string; user: { username: string } }
-interface Deposit { id: number; amount: number; createdAt: string; user: { username: string } }
 
 export default function ValidationPage() {
   const [week, setWeek] = useState<Date>(() => getWeekStart())
   const [activities, setActivities] = useState<Activity[]>([])
-  const [deposits, setDeposits] = useState<Deposit[]>([])
   const [loading, setLoading] = useState(true)
 
   const weekParam = week.toISOString().split('T')[0]
@@ -18,12 +16,8 @@ export default function ValidationPage() {
 
   async function load() {
     setLoading(true)
-    const [a, d] = await Promise.all([
-      fetch(`/api/activities?status=EN_ATTENTE&week=${weekParam}`).then(r => r.ok ? r.json() : []),
-      fetch(`/api/deposits?status=EN_ATTENTE&week=${weekParam}`).then(r => r.ok ? r.json() : []),
-    ])
+    const a = await fetch(`/api/activities?status=EN_ATTENTE&week=${weekParam}`).then(r => r.ok ? r.json() : [])
     setActivities(a)
-    setDeposits(d)
     setLoading(false)
   }
   useEffect(() => { load() }, [week])
@@ -33,16 +27,11 @@ export default function ValidationPage() {
     load()
   }
 
-  async function reviewDeposit(id: number, status: 'APPROUVE' | 'REJETE') {
-    await fetch(`/api/deposits/${id}`, { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ status }) })
-    load()
-  }
-
   return (
     <>
       <Navbar />
       <div className="pt-14 lg:pt-0 lg:ml-64 min-h-screen">
-        <div className="px-6 py-6 max-w-6xl mx-auto">
+        <div className="px-6 py-6 max-w-4xl mx-auto">
 
           <div className="flex items-center justify-between mb-6">
             <div>
@@ -56,80 +45,43 @@ export default function ValidationPage() {
             </div>
           </div>
 
-          <div className="grid grid-cols-2 gap-6">
-
-            {/* Activités en attente */}
-            <div className="card overflow-hidden">
-              <div className="px-5 py-3 border-b border-border flex items-center justify-between">
-                <h2 className="text-base font-semibold text-ink">Activités en attente</h2>
-                <span className="text-xs font-mono bg-amber-950/40 text-amber-400 border border-amber-900/40 px-2 py-0.5 rounded">{activities.length}</span>
+          <div className="card overflow-hidden">
+            <div className="px-5 py-3 border-b border-border flex items-center justify-between">
+              <h2 className="text-base font-semibold text-ink">Activités en attente</h2>
+              <span className="text-xs font-mono bg-amber-950/40 text-amber-400 border border-amber-900/40 px-2 py-0.5 rounded">{activities.length}</span>
+            </div>
+            {loading ? (
+              <div className="p-5 space-y-3">{[...Array(3)].map((_, i) => <div key={i} className="h-14 bg-bg-elevated rounded animate-pulse" />)}</div>
+            ) : activities.length === 0 ? (
+              <div className="p-8 text-center">
+                <p className="text-ink-muted text-sm">Aucune activité en attente.</p>
               </div>
-              {loading ? (
-                <div className="p-5 space-y-3">{[...Array(3)].map((_, i) => <div key={i} className="h-14 bg-bg-elevated rounded animate-pulse" />)}</div>
-              ) : activities.length === 0 ? (
-                <div className="p-8 text-center">
-                  <p className="text-ink-muted text-sm">Aucune activité en attente.</p>
-                </div>
-              ) : (
-                <div className="divide-y divide-border-subtle">
-                  {activities.map(a => (
-                    <div key={a.id} className="px-5 py-4">
-                      <div className="flex items-start justify-between gap-3">
-                        <div className="min-w-0 flex-1">
-                          <div className="flex items-center gap-2 flex-wrap">
-                            <span className="font-semibold text-ink text-sm">{a.user.username}</span>
-                            <span className="text-ink-muted text-sm">·</span>
-                            <span className="text-sm text-ink-muted">{a.activityName}</span>
-                            <span className="text-xs font-mono font-bold text-gold">{a.points} pts</span>
-                          </div>
-                          <a href={a.discordLink} target="_blank" rel="noopener noreferrer" className="text-xs text-ink-faint hover:text-gold mt-1 block truncate transition-colors">↗ {a.discordLink}</a>
-                          <p className="text-[10px] text-ink-faint mt-1">{new Date(a.createdAt).toLocaleString('fr-FR')}</p>
+            ) : (
+              <div className="divide-y divide-border-subtle">
+                {activities.map(a => (
+                  <div key={a.id} className="px-5 py-4">
+                    <div className="flex items-start justify-between gap-3">
+                      <div className="min-w-0 flex-1">
+                        <div className="flex items-center gap-2 flex-wrap">
+                          <span className="font-semibold text-ink text-sm">{a.user.username}</span>
+                          <span className="text-ink-muted text-sm">·</span>
+                          <span className="text-sm text-ink-muted">{a.activityName}</span>
+                          <span className="text-xs font-mono font-bold text-gold">{a.points} pts</span>
                         </div>
-                        <div className="flex items-center gap-1.5 shrink-0 mt-0.5">
-                          <button onClick={() => reviewActivity(a.id, 'APPROUVE')} className="px-3 py-1.5 rounded text-xs font-medium bg-emerald-950/40 border border-emerald-900/40 text-emerald-400 hover:bg-emerald-950 transition-colors cursor-pointer">Approuver</button>
-                          <button onClick={() => reviewActivity(a.id, 'REJETE')} className="btn-danger text-xs px-3 py-1.5">Rejeter</button>
-                        </div>
+                        <a href={a.discordLink} target="_blank" rel="noopener noreferrer" className="text-xs text-ink-faint hover:text-gold mt-1 block truncate transition-colors">↗ {a.discordLink}</a>
+                        <p className="text-[10px] text-ink-faint mt-1">{new Date(a.createdAt).toLocaleString('fr-FR')}</p>
+                      </div>
+                      <div className="flex items-center gap-1.5 shrink-0 mt-0.5">
+                        <button onClick={() => reviewActivity(a.id, 'APPROUVE')} className="px-3 py-1.5 rounded text-xs font-medium bg-emerald-950/40 border border-emerald-900/40 text-emerald-400 hover:bg-emerald-950 transition-colors cursor-pointer">Approuver</button>
+                        <button onClick={() => reviewActivity(a.id, 'REJETE')} className="btn-danger text-xs px-3 py-1.5">Rejeter</button>
                       </div>
                     </div>
-                  ))}
-                </div>
-              )}
-            </div>
-
-            {/* Dépôts en attente */}
-            <div className="card overflow-hidden">
-              <div className="px-5 py-3 border-b border-border flex items-center justify-between">
-                <h2 className="text-base font-semibold text-ink">Dépôts en attente</h2>
-                <span className="text-xs font-mono bg-amber-950/40 text-amber-400 border border-amber-900/40 px-2 py-0.5 rounded">{deposits.length}</span>
+                  </div>
+                ))}
               </div>
-              {loading ? (
-                <div className="p-5 space-y-3">{[...Array(3)].map((_, i) => <div key={i} className="h-14 bg-bg-elevated rounded animate-pulse" />)}</div>
-              ) : deposits.length === 0 ? (
-                <div className="p-8 text-center">
-                  <p className="text-ink-muted text-sm">Aucun dépôt en attente.</p>
-                </div>
-              ) : (
-                <div className="divide-y divide-border-subtle">
-                  {deposits.map(d => (
-                    <div key={d.id} className="px-5 py-4 flex items-center justify-between gap-3">
-                      <div>
-                        <div className="flex items-center gap-2">
-                          <span className="font-semibold text-ink text-sm">{d.user.username}</span>
-                          <span className="font-mono font-bold text-ink text-sm">{d.amount.toLocaleString('fr-FR')} ¥</span>
-                        </div>
-                        <p className="text-[10px] text-ink-faint mt-1">{new Date(d.createdAt).toLocaleString('fr-FR')}</p>
-                      </div>
-                      <div className="flex items-center gap-1.5 shrink-0">
-                        <button onClick={() => reviewDeposit(d.id, 'APPROUVE')} className="px-3 py-1.5 rounded text-xs font-medium bg-emerald-950/40 border border-emerald-900/40 text-emerald-400 hover:bg-emerald-950 transition-colors cursor-pointer">Approuver</button>
-                        <button onClick={() => reviewDeposit(d.id, 'REJETE')} className="btn-danger text-xs px-3 py-1.5">Rejeter</button>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              )}
-            </div>
-
+            )}
           </div>
+
         </div>
       </div>
     </>

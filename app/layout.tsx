@@ -2,8 +2,8 @@ import type { Metadata } from 'next'
 import './globals.css'
 
 export const metadata: Metadata = {
-  title: 'Gaiko — Diplomatie',
-  description: 'Gestion des membres de la section Diplomatie',
+  title: 'Fūkan — Institut du Sceau',
+  description: 'Gestion des membres de l\'Institut du Sceau',
 }
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {

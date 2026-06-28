@@ -6,17 +6,12 @@ import { weekLabel, shiftWeek, getWeekStart } from '@/lib/week'
 
 interface ActivityType { id: number; name: string; points: number }
 interface Activity { id: number; activityName: string; points: number; discordLink: string; status: string; createdAt: string }
-interface Deposit { id: number; amount: number; status: string; createdAt: string }
 interface MalusItem { id: number; malusName: string; points: number; createdAt: string }
 interface Summary {
   activities: Activity[]
-  deposits: Deposit[]
   malus: MalusItem[]
   pointsApprouves: number
   pointsMalus: number
-  totalDeposeApprouve: number
-  salaireEstime: number
-  salaryPercent: number
   week: string
 }
 
@@ -37,11 +32,8 @@ export default function ProfilePage() {
   const [types, setTypes] = useState<ActivityType[]>([])
   const [activityTypeId, setActivityTypeId] = useState('')
   const [discordLink, setDiscordLink] = useState('')
-  const [amount, setAmount] = useState('')
   const [posting, setPosting] = useState(false)
-  const [depositing, setDepositing] = useState(false)
   const [error, setError] = useState('')
-  const [depositError, setDepositError] = useState('')
 
   const weekParam = week.toISOString().split('T')[0]
 
@@ -51,8 +43,8 @@ export default function ProfilePage() {
       fetch('/api/activity-types?active=1').then(r => r.ok ? r.json() : []),
     ])
     if (s) setSummary(s)
-    setTypes(t)
-    if (t.length > 0 && !activityTypeId) setActivityTypeId(String(t[0].id))
+    setTypes(t as ActivityType[])
+    if (t.length > 0 && !activityTypeId) setActivityTypeId(String((t as ActivityType[])[0].id))
   }, [weekParam, activityTypeId])
 
   useEffect(() => { load() }, [week])
@@ -71,23 +63,6 @@ export default function ProfilePage() {
 
   async function handleDeleteActivity(id: number) {
     await fetch(`/api/activities/${id}`, { method: 'DELETE' })
-    load()
-  }
-
-  async function handlePostDeposit(e: React.FormEvent) {
-    e.preventDefault()
-    setDepositing(true); setDepositError('')
-    const res = await fetch('/api/deposits', {
-      method: 'POST', headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ amount: Number(amount) }),
-    })
-    if (res.ok) { setAmount(''); load() }
-    else { const d = await res.json(); setDepositError(d.error) }
-    setDepositing(false)
-  }
-
-  async function handleDeleteDeposit(id: number) {
-    await fetch(`/api/deposits/${id}`, { method: 'DELETE' })
     load()
   }
 
@@ -114,18 +89,14 @@ export default function ProfilePage() {
           </div>
 
           {/* Stats */}
-          <div className="grid grid-cols-3 gap-4 mb-6">
+          <div className="grid grid-cols-2 gap-4 mb-6">
             <div className="card p-5">
               <p className="text-xs text-ink-muted mb-1">Points approuvés</p>
               <p className="text-3xl font-bold text-gold">{summary?.pointsApprouves ?? 0}</p>
             </div>
             <div className="card p-5">
-              <p className="text-xs text-ink-muted mb-1">Déposé (approuvé)</p>
-              <p className="text-3xl font-bold text-ink">{(summary?.totalDeposeApprouve ?? 0).toLocaleString('fr-FR')} ¥</p>
-            </div>
-            <div className="card p-5">
-              <p className="text-xs text-ink-muted mb-1">Salaire estimé ({summary?.salaryPercent ?? 20}%)</p>
-              <p className="text-3xl font-bold text-emerald-400">{(summary?.salaireEstime ?? 0).toLocaleString('fr-FR')} ¥</p>
+              <p className="text-xs text-ink-muted mb-1">Malus</p>
+              <p className="text-3xl font-bold text-red-400">{summary?.pointsMalus ?? 0} pts</p>
             </div>
           </div>
 
@@ -159,22 +130,6 @@ export default function ProfilePage() {
                 </div>
               )}
 
-              {/* Déclarer un dépôt */}
-              {isCurrentWeek && (
-                <div className="card p-6">
-                  <h2 className="text-base font-semibold text-ink mb-4">Déclarer un dépôt au coffre</h2>
-                  <form onSubmit={handlePostDeposit} className="flex gap-2">
-                    <input
-                      type="number" value={amount} onChange={e => setAmount(e.target.value)}
-                      className="input flex-1" placeholder="Montant (¥)" min="1" required
-                    />
-                    <button type="submit" disabled={depositing || !amount} className="btn-primary whitespace-nowrap">
-                      {depositing ? 'Envoi...' : 'Déclarer'}
-                    </button>
-                  </form>
-                  {depositError && <p className="text-red-400 text-sm mt-2">{depositError}</p>}
-                </div>
-              )}
             </div>
 
             {/* Colonne droite — listes */}
@@ -202,31 +157,6 @@ export default function ProfilePage() {
                           <span className={`text-[10px] font-mono px-2 py-0.5 rounded border ${STATUS_STYLES[a.status] ?? ''}`}>{STATUS_LABELS[a.status] ?? a.status}</span>
                           {a.status === 'EN_ATTENTE' && isCurrentWeek && (
                             <button onClick={() => handleDeleteActivity(a.id)} className="btn-danger text-xs px-2 py-1">×</button>
-                          )}
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                )}
-              </div>
-
-              {/* Liste dépôts */}
-              <div className="card overflow-hidden">
-                <div className="px-5 py-3 border-b border-border flex items-center justify-between">
-                  <h2 className="text-base font-semibold text-ink">Mes dépôts</h2>
-                  <span className="text-xs font-mono text-ink-muted">{summary?.deposits.length ?? 0}</span>
-                </div>
-                {!summary || summary.deposits.length === 0 ? (
-                  <p className="p-5 text-ink-muted text-sm">Aucun dépôt cette semaine.</p>
-                ) : (
-                  <div className="divide-y divide-border-subtle">
-                    {summary.deposits.map(d => (
-                      <div key={d.id} className="px-5 py-3 flex items-center justify-between gap-3">
-                        <p className="text-sm font-medium text-ink">{d.amount.toLocaleString('fr-FR')} ¥</p>
-                        <div className="flex items-center gap-2">
-                          <span className={`text-[10px] font-mono px-2 py-0.5 rounded border ${STATUS_STYLES[d.status] ?? ''}`}>{STATUS_LABELS[d.status] ?? d.status}</span>
-                          {d.status === 'EN_ATTENTE' && isCurrentWeek && (
-                            <button onClick={() => handleDeleteDeposit(d.id)} className="btn-danger text-xs px-2 py-1">×</button>
                           )}
                         </div>
                       </div>

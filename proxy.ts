@@ -7,7 +7,7 @@ const PUBLIC = ['/login', '/api/auth']
 
 const GERANT_ONLY = [
   '/admin', '/api/admin',
-  '/activites', '/validation', '/classement', '/salaires', '/malus',
+  '/activites', '/validation', '/classement', '/malus',
   '/api/settings', '/api/gestion', '/api/malus',
 ]
 
@@ -17,7 +17,7 @@ export async function proxy(req: NextRequest) {
 
   if (PUBLIC.some(p => pathname.startsWith(p))) return res
 
-  const cookie = req.cookies.get('koeki-session')
+  const cookie = req.cookies.get('fukan-session')
   let session: Partial<SessionData> = {}
   if (cookie?.value) {
     try {
