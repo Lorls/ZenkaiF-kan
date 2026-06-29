@@ -11,7 +11,7 @@ export interface SessionData {
 
 const sessionOptions = {
   password: process.env.SESSION_SECRET as string,
-  cookieName: 'fukan-session',
+  cookieName: 'koeki-session',
   cookieOptions: {
     secure: process.env.NODE_ENV === 'production',
     maxAge: 7 * 24 * 60 * 60,
