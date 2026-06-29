@@ -17,7 +17,7 @@ export async function proxy(req: NextRequest) {
 
   if (PUBLIC.some(p => pathname.startsWith(p))) return res
 
-  const cookie = req.cookies.get('fukan-session')
+  const cookie = req.cookies.get('gaiko-session')
   let session: Partial<SessionData> = {}
   if (cookie?.value) {
     try {
